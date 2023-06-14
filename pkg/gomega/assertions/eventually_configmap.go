@@ -10,7 +10,6 @@ import (
 
 // EventuallyConfigMap is a gomega async assertion that can be used with the
 // standard or custom gomega matchers
-// Polls the resource every 30 seconds until success or timeout defined by POLLING_TIMEOUT
 //
 //	EventuallyConfigMap(ctx, client, configMapName, namespace).Should(Not(BeNil()), "config map %s should exist", configMapName)
 func EventuallyConfigMap(ctx context.Context, client *openshift.Client, name, namespace string) gomega.AsyncAssertion {
