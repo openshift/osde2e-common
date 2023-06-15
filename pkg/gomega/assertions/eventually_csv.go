@@ -2,10 +2,8 @@ package assertions
 
 import (
 	"context"
-	"log"
 
-	"github.com/onsi/gomega"
-	operatorv1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -16,8 +14,8 @@ import (
 // It can be used with the standard or custom gomega matchers, timeout and polling interval
 //
 //	EventuallyCsv(ctx, dynamicClient, operatorName, namespaceName).Should(BeTrue())
-func EventuallyCsv(ctx context.Context, dynamicClient dynamic.DynamicClient, specDisplayName, namespace string) gomega.AsyncAssertion {
-	return gomega.Eventually(func() bool {
+func EventuallyCsv(ctx context.Context, dynamicClient dynamic.DynamicClient, specDisplayName, namespace string) AsyncAssertion {
+	return Eventually(func() bool {
 		csvList, err := dynamicClient.Resource(
 			schema.GroupVersionResource{
 				Group:    "operators.coreos.com",
@@ -25,14 +23,11 @@ func EventuallyCsv(ctx context.Context, dynamicClient dynamic.DynamicClient, spe
 				Resource: "clusterserviceversions",
 			},
 		).Namespace(namespace).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			log.Printf("failed to get CSVs in namespace %s: %v", namespace, err)
-			return false
-		}
+		Expect(err).NotTo(HaveOccurred(), "Failed to retrieve CSV from namespace %s", namespace)
 		for _, csv := range csvList.Items {
 			specName, _, _ := unstructured.NestedFieldCopy(csv.Object, "spec", "displayName")
 			statusPhase, _, _ := unstructured.NestedFieldCopy(csv.Object, "status", "phase")
-			if statusPhase == string(operatorv1.CSVPhaseSucceeded) && specName == specDisplayName {
+			if statusPhase == "Succeeded" && specName == specDisplayName {
 				return true
 			}
 		}
