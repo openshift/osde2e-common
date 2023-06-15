@@ -3,18 +3,24 @@ package assertions
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	. "github.com/onsi/gomega"
+	"github.com/openshift/osde2e-common/pkg/clients/openshift"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 )
 
 // EventuallyCsv returns true if given namespace contains given CSV spec display name, and the CSV status is "Succeeded"
 // It can be used with the standard or custom gomega matchers, timeout and polling interval
 //
 //	EventuallyCsv(ctx, dynamicClient, operatorName, namespaceName).Should(BeTrue())
-func EventuallyCsv(ctx context.Context, dynamicClient dynamic.DynamicClient, specDisplayName, namespace string) AsyncAssertion {
+func EventuallyCsv(ctx context.Context, specDisplayName, namespace string) AsyncAssertion {
+	client, err := openshift.New(logr.Logger{})
+	Expect(err).NotTo(HaveOccurred(), "Failed to create openshift client")
+	dynamicClient, err := client.DynamicClient()
+	Expect(err).NotTo(HaveOccurred(), "Failed to create dynamic client")
+
 	return Eventually(func() bool {
 		csvList, err := dynamicClient.Resource(
 			schema.GroupVersionResource{

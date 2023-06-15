@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/openshift/api"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -58,4 +59,8 @@ func (c *Client) Impersonate(user string, groups ...string) (*Client, error) {
 	}
 
 	return &client, nil
+}
+
+func (c *Client) DynamicClient() (*dynamic.DynamicClient, error) {
+	return dynamic.NewForConfig(c.Resources.GetConfig())
 }
