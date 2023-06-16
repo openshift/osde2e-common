@@ -26,18 +26,21 @@ type CreateClusterOptions struct {
 	HostPrefix int
 	Replicas   int
 
-	ChannelGroup       string
-	ClusterName        string
-	ComputeMachineType string
-	MachineCidr        string
-	Mode               string
-	NetworkType        string
-	PodCIDR            string
-	Properties         string
-	ServiceCIDR        string
-	SubnetIDs          string
-	Version            string
-	WorkingDir         string
+	AdditionalTrustBundleFile string
+	ChannelGroup              string
+	ClusterName               string
+	ComputeMachineType        string
+	HTTPProxy                 string
+	HTTPSProxy                string
+	MachineCidr               string
+	Mode                      string
+	NetworkType               string
+	PodCIDR                   string
+	Properties                string
+	ServiceCIDR               string
+	SubnetIDs                 string
+	Version                   string
+	WorkingDir                string
 
 	oidcConfigID string
 
@@ -339,6 +342,22 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 	}
 
 	commandArgs = append(commandArgs, "--replicas", fmt.Sprint(options.Replicas))
+
+	if options.SubnetIDs != "" {
+		commandArgs = append(commandArgs, "--subnet-ids", options.SubnetIDs)
+
+		if options.HTTPProxy != "" {
+			commandArgs = append(commandArgs, "--http-proxy", options.HTTPProxy)
+		}
+
+		if options.HTTPSProxy != "" {
+			commandArgs = append(commandArgs, "--https-proxy", options.HTTPSProxy)
+		}
+
+		if options.AdditionalTrustBundleFile != "" {
+			commandArgs = append(commandArgs, "----additional-trust-bundle-file", options.AdditionalTrustBundleFile)
+		}
+	}
 
 	r.log.Info("Initiating cluster creation", clusterNameLoggerKey, options.ClusterName, ocmEnvironmentLoggerKey, r.ocmEnvironment)
 
