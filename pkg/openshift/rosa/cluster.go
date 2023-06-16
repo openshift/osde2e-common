@@ -29,6 +29,7 @@ type CreateClusterOptions struct {
 	ComputeMachineType string
 	MachineCidr        string
 	Mode               string
+	PodCIDR            string
 	Properties         string
 	ServiceCIDR        string
 	SubnetIDs          string
@@ -294,6 +295,10 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		"--support-role-arn", options.accountRoles.supportRoleARN,
 		"--worker-iam-role", options.accountRoles.workerRoleARN,
 		"--yes",
+	}
+
+	if options.PodCIDR != "" {
+		commandArgs = append(commandArgs, "--pod-cidr", options.PodCIDR)
 	}
 
 	if options.ServiceCIDR != "" {
