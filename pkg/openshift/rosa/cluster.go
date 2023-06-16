@@ -18,6 +18,7 @@ import (
 
 // CreateClusterOptions represents data used to create clusters
 type CreateClusterOptions struct {
+	FIPS     bool
 	HostedCP bool
 	STS      bool
 
@@ -306,6 +307,10 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 
 	if options.STS {
 		commandArgs = append(commandArgs, "--sts")
+	}
+
+	if options.FIPS {
+		commandArgs = append(commandArgs, "--fips")
 	}
 
 	r.log.Info("Initiating cluster creation", clusterNameLoggerKey, options.ClusterName, ocmEnvironmentLoggerKey, r.ocmEnvironment)
