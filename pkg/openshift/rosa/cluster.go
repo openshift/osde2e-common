@@ -30,6 +30,7 @@ type CreateClusterOptions struct {
 	ComputeMachineType string
 	MachineCidr        string
 	Mode               string
+	NetworkType        string
 	PodCIDR            string
 	Properties         string
 	ServiceCIDR        string
@@ -323,6 +324,10 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 
 	if options.FIPS {
 		commandArgs = append(commandArgs, "--fips")
+	}
+
+	if options.NetworkType != "" && options.NetworkType != "OVNKubernetes" {
+		commandArgs = append(commandArgs, "--network-type", options.NetworkType)
 	}
 
 	r.log.Info("Initiating cluster creation", clusterNameLoggerKey, options.ClusterName, ocmEnvironmentLoggerKey, r.ocmEnvironment)
