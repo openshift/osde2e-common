@@ -20,6 +20,7 @@ import (
 type CreateClusterOptions struct {
 	FIPS     bool
 	HostedCP bool
+	MultiAZ  bool
 	STS      bool
 
 	HostPrefix int
@@ -291,7 +292,6 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		"--machine-cidr", options.MachineCidr,
 		"--region", r.awsCredentials.Region,
 		"--version", options.Version,
-		"--replicas", fmt.Sprint(options.Replicas),
 		"--host-prefix", fmt.Sprint(options.HostPrefix),
 		"--controlplane-iam-role", options.accountRoles.controlPlaneRoleARN,
 		"--role-arn", options.accountRoles.installerRoleARN,
@@ -329,6 +329,16 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 	if options.NetworkType != "" && options.NetworkType != "OVNKubernetes" {
 		commandArgs = append(commandArgs, "--network-type", options.NetworkType)
 	}
+
+	if options.MultiAZ {
+		commandArgs = append(commandArgs, "--multi-az")
+
+		if options.Replicas < 3 {
+			options.Replicas = 3
+		}
+	}
+
+	commandArgs = append(commandArgs, "--replicas", fmt.Sprint(options.Replicas))
 
 	r.log.Info("Initiating cluster creation", clusterNameLoggerKey, options.ClusterName, ocmEnvironmentLoggerKey, r.ocmEnvironment)
 
