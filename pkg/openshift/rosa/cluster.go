@@ -22,7 +22,8 @@ type CreateClusterOptions struct {
 	HostedCP bool
 	STS      bool
 
-	Replicas int
+	HostPrefix int
+	Replicas   int
 
 	ChannelGroup       string
 	ClusterName        string
@@ -290,6 +291,7 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		"--region", r.awsCredentials.Region,
 		"--version", options.Version,
 		"--replicas", fmt.Sprint(options.Replicas),
+		"--host-prefix", fmt.Sprint(options.HostPrefix),
 		"--controlplane-iam-role", options.accountRoles.controlPlaneRoleARN,
 		"--role-arn", options.accountRoles.installerRoleARN,
 		"--support-role-arn", options.accountRoles.supportRoleARN,
