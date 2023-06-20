@@ -83,6 +83,11 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 
 	options.setDefaultCreateClusterOptions()
 
+	err := r.regionCheck(ctx, r.awsCredentials.Region, options.HostedCP, options.MultiAZ)
+	if err != nil {
+		return "", &clusterError{action: action, err: err}
+	}
+
 	if options.STS {
 		version, err := semver.NewVersion(options.Version)
 		if err != nil {
