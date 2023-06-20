@@ -48,6 +48,7 @@ type CreateClusterOptions struct {
 
 	InstallTimeout     time.Duration
 	HealthCheckTimeout time.Duration
+	ExpirationDuration time.Duration
 }
 
 // DeleteClusterOptions represents data used to delete clusters
@@ -357,6 +358,10 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		if options.AdditionalTrustBundleFile != "" {
 			commandArgs = append(commandArgs, "----additional-trust-bundle-file", options.AdditionalTrustBundleFile)
 		}
+	}
+
+	if options.ExpirationDuration > 0 {
+		commandArgs = append(commandArgs, "--expiration-time", time.Now().Add(options.ExpirationDuration*time.Minute).UTC().Format(time.RFC3339))
 	}
 
 	r.log.Info("Initiating cluster creation", clusterNameLoggerKey, options.ClusterName, ocmEnvironmentLoggerKey, r.ocmEnvironment)
