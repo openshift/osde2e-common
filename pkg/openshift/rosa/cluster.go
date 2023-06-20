@@ -18,20 +18,29 @@ import (
 
 // CreateClusterOptions represents data used to create clusters
 type CreateClusterOptions struct {
+	FIPS     bool
 	HostedCP bool
+	MultiAZ  bool
 	STS      bool
 
-	Replicas int
+	HostPrefix int
+	Replicas   int
 
-	ChannelGroup       string
-	ClusterName        string
-	ComputeMachineType string
-	MachineCidr        string
-	Mode               string
-	Properties         string
-	SubnetIDs          string
-	Version            string
-	WorkingDir         string
+	AdditionalTrustBundleFile string
+	ChannelGroup              string
+	ClusterName               string
+	ComputeMachineType        string
+	HTTPProxy                 string
+	HTTPSProxy                string
+	MachineCidr               string
+	Mode                      string
+	NetworkType               string
+	PodCIDR                   string
+	Properties                string
+	ServiceCIDR               string
+	SubnetIDs                 string
+	Version                   string
+	WorkingDir                string
 
 	oidcConfigID string
 
@@ -39,6 +48,7 @@ type CreateClusterOptions struct {
 
 	InstallTimeout     time.Duration
 	HealthCheckTimeout time.Duration
+	ExpirationDuration time.Duration
 }
 
 // DeleteClusterOptions represents data used to delete clusters
@@ -286,12 +296,20 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		"--machine-cidr", options.MachineCidr,
 		"--region", r.awsCredentials.Region,
 		"--version", options.Version,
-		"--replicas", fmt.Sprint(options.Replicas),
+		"--host-prefix", fmt.Sprint(options.HostPrefix),
 		"--controlplane-iam-role", options.accountRoles.controlPlaneRoleARN,
 		"--role-arn", options.accountRoles.installerRoleARN,
 		"--support-role-arn", options.accountRoles.supportRoleARN,
 		"--worker-iam-role", options.accountRoles.workerRoleARN,
 		"--yes",
+	}
+
+	if options.PodCIDR != "" {
+		commandArgs = append(commandArgs, "--pod-cidr", options.PodCIDR)
+	}
+
+	if options.ServiceCIDR != "" {
+		commandArgs = append(commandArgs, "--service-cidr", options.ServiceCIDR)
 	}
 
 	if options.Properties != "" {
@@ -306,6 +324,44 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 
 	if options.STS {
 		commandArgs = append(commandArgs, "--sts")
+	}
+
+	if options.FIPS {
+		commandArgs = append(commandArgs, "--fips")
+	}
+
+	if options.NetworkType != "" && options.NetworkType != "OVNKubernetes" {
+		commandArgs = append(commandArgs, "--network-type", options.NetworkType)
+	}
+
+	if options.MultiAZ {
+		commandArgs = append(commandArgs, "--multi-az")
+
+		if options.Replicas < 3 {
+			options.Replicas = 3
+		}
+	}
+
+	commandArgs = append(commandArgs, "--replicas", fmt.Sprint(options.Replicas))
+
+	if options.SubnetIDs != "" {
+		commandArgs = append(commandArgs, "--subnet-ids", options.SubnetIDs)
+
+		if options.HTTPProxy != "" {
+			commandArgs = append(commandArgs, "--http-proxy", options.HTTPProxy)
+		}
+
+		if options.HTTPSProxy != "" {
+			commandArgs = append(commandArgs, "--https-proxy", options.HTTPSProxy)
+		}
+
+		if options.AdditionalTrustBundleFile != "" {
+			commandArgs = append(commandArgs, "----additional-trust-bundle-file", options.AdditionalTrustBundleFile)
+		}
+	}
+
+	if options.ExpirationDuration > 0 {
+		commandArgs = append(commandArgs, "--expiration-time", time.Now().Add(options.ExpirationDuration*time.Minute).UTC().Format(time.RFC3339))
 	}
 
 	r.log.Info("Initiating cluster creation", clusterNameLoggerKey, options.ClusterName, ocmEnvironmentLoggerKey, r.ocmEnvironment)
