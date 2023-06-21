@@ -36,7 +36,6 @@ type CreateClusterOptions struct {
 	Mode                      string
 	NetworkType               string
 	PodCIDR                   string
-	Properties                string
 	ServiceCIDR               string
 	SubnetIDs                 string
 	Version                   string
@@ -45,6 +44,8 @@ type CreateClusterOptions struct {
 	oidcConfigID string
 
 	accountRoles accountRoles
+
+	Properties map[string]string
 
 	InstallTimeout     time.Duration
 	HealthCheckTimeout time.Duration
@@ -312,8 +313,10 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		commandArgs = append(commandArgs, "--service-cidr", options.ServiceCIDR)
 	}
 
-	if options.Properties != "" {
-		commandArgs = append(commandArgs, "--properties", options.Properties)
+	if len(options.Properties) > 0 {
+		for key, value := range options.Properties {
+			commandArgs = append(commandArgs, "--properties", fmt.Sprintf("%s:%s", key, value))
+		}
 	}
 
 	if options.HostedCP {
