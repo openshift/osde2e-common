@@ -64,11 +64,15 @@ func (c *AWSCredentials) CredentialsAsList() []string {
 
 	switch priorityLevel {
 	case 0:
-		return []string{fmt.Sprintf("AWS_PROFILE=%s", c.Profile)}
+		return []string{
+			fmt.Sprintf("AWS_PROFILE=%s", c.Profile),
+			fmt.Sprintf("AWS_REGION=%s", c.Region),
+		}
 	case 1:
 		return []string{
 			fmt.Sprintf("AWS_ACCESS_KEY_ID=%s", c.AccessKeyID),
 			fmt.Sprintf("AWS_SECRET_ACCESS_KEY=%s", c.SecretAccessKey),
+			fmt.Sprintf("AWS_REGION=%s", c.Region),
 		}
 	default:
 		return []string{}
@@ -81,11 +85,15 @@ func (c *AWSCredentials) CredentialsAsMap() map[string]string {
 
 	switch priorityLevel {
 	case 0:
-		return map[string]string{"AWS_PROFILE": c.Profile}
+		return map[string]string{
+			"AWS_PROFILE": c.Profile,
+			"AWS_REGION":  c.Region,
+		}
 	case 1:
 		return map[string]string{
 			"AWS_ACCESS_KEY_ID":     c.AccessKeyID,
 			"AWS_SECRET_ACCESS_KEY": c.SecretAccessKey,
+			"AWS_REGION":            c.Region,
 		}
 	default:
 		return map[string]string{}
