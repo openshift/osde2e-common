@@ -70,7 +70,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 
 // HCPClusterHealthy waits for the cluster to be in a health "ready" state
 // by confirming nodes are available
-func (c *Client) HCPClusterHealthy(ctx context.Context, timeout time.Duration) error {
+func (c *Client) HCPClusterHealthy(ctx context.Context, computeNodes int, timeout time.Duration) error {
 	c.log.Info("Wait for hosted control plane cluster to healthy", timeoutLoggerKey, timeout)
 
 	err := wait.For(func() (bool, error) {
@@ -96,8 +96,7 @@ func (c *Client) HCPClusterHealthy(ctx context.Context, timeout time.Duration) e
 			}
 		}
 
-		// TODO: Compare with number of nodes cluster is deployed with
-		return true, nil
+		return len(nodes.Items) == computeNodes, nil
 	}, wait.WithTimeout(timeout))
 	if err != nil {
 		return fmt.Errorf("hosted control plane cluster health check failed: %v", err)
