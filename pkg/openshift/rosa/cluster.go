@@ -18,10 +18,11 @@ import (
 
 // CreateClusterOptions represents data used to create clusters
 type CreateClusterOptions struct {
-	FIPS     bool
-	HostedCP bool
-	MultiAZ  bool
-	STS      bool
+	FIPS            bool
+	HostedCP        bool
+	MultiAZ         bool
+	STS             bool
+	SkipHealthCheck bool
 
 	HostPrefix int
 	Replicas   int
@@ -139,26 +140,28 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		return clusterID, &clusterError{action: action, err: err}
 	}
 
-	kubeconfigFile, err := r.Client.KubeconfigFile(ctx, clusterID)
-	if err != nil {
-		return clusterID, &clusterError{action: action, err: err}
-	}
+	if !options.SkipHealthCheck {
+		kubeconfigFile, err := r.Client.KubeconfigFile(ctx, clusterID)
+		if err != nil {
+			return clusterID, &clusterError{action: action, err: err}
+		}
 
-	client, err := openshiftclient.NewFromKubeconfig(kubeconfigFile, r.log)
-	if err != nil {
-		return clusterID, &clusterError{action: action, err: err}
-	}
+		client, err := openshiftclient.NewFromKubeconfig(kubeconfigFile, r.log)
+		if err != nil {
+			return clusterID, &clusterError{action: action, err: err}
+		}
 
-	err = r.waitForClusterToBeHealthy(
-		ctx,
-		client,
-		clusterID,
-		options.WorkingDir,
-		options.HostedCP,
-		options.HealthCheckTimeout,
-	)
-	if err != nil {
-		return clusterID, &clusterError{action: action, err: err}
+		err = r.waitForClusterToBeHealthy(
+			ctx,
+			client,
+			clusterID,
+			options.WorkingDir,
+			options.HostedCP,
+			options.HealthCheckTimeout,
+		)
+		if err != nil {
+			return clusterID, &clusterError{action: action, err: err}
+		}
 	}
 
 	return clusterID, nil
