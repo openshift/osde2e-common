@@ -103,8 +103,6 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 	}
 
 	if options.HostedCP {
-		// TODO: region check for hcp support
-
 		oidcConfigID, err := r.createOIDCConfig(
 			ctx,
 			options.ClusterName,
