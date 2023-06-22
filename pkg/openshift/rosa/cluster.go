@@ -60,8 +60,9 @@ type DeleteClusterOptions struct {
 
 	oidcConfigID string
 
-	HostedCP bool
-	STS      bool
+	DeleteHostedCPVPC bool
+	HostedCP          bool
+	STS               bool
 
 	UninstallTimeout time.Duration
 }
@@ -198,14 +199,16 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 			return &clusterError{action: action, err: err}
 		}
 
-		err = r.deleteHostedControlPlaneVPC(
-			ctx,
-			options.ClusterName,
-			r.awsCredentials.Region,
-			options.WorkingDir,
-		)
-		if err != nil {
-			return &clusterError{action: action, err: err}
+		if options.DeleteHostedCPVPC {
+			err = r.deleteHostedControlPlaneVPC(
+				ctx,
+				options.ClusterName,
+				r.awsCredentials.Region,
+				options.WorkingDir,
+			)
+			if err != nil {
+				return &clusterError{action: action, err: err}
+			}
 		}
 	}
 
@@ -538,6 +541,7 @@ func (o *CreateClusterOptions) setHealthCheckTimeout(duration time.Duration) {
 // setDefaultDeleteClusterOptions sets default options when creating clusters
 func (o *DeleteClusterOptions) setDefaultDeleteClusterOptions() {
 	if o.HostedCP {
+		o.DeleteHostedCPVPC = true
 		o.STS = true
 	}
 
