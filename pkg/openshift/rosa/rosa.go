@@ -31,8 +31,10 @@ type Provider struct {
 	*ocmclient.Client
 	awsCredentials *awscloud.AWSCredentials
 	ocmEnvironment ocmclient.Environment
-	rosaBinary     string
 	log            logr.Logger
+
+	AWSRegion  string
+	rosaBinary string
 }
 
 // providerError represents the provider custom error
@@ -219,16 +221,29 @@ func New(ctx context.Context, token string, ocmEnvironment ocmclient.Environment
 		return nil, &providerError{err: err}
 	}
 
-	ocmClient, err := ocmclient.New(ctx, token, ocmEnvironment)
+	provider := &Provider{
+		awsCredentials: awsCredentials,
+		ocmEnvironment: ocmEnvironment,
+		rosaBinary:     rosaBinary,
+		Client:         nil,
+		log:            logger,
+	}
+
+	if awsCredentials.Region == "random" {
+		// Set a temporary region to select a random region later on
+		awsCredentials.Region = "us-east-1"
+		awsCredentials.Region, err = provider.selectRandomRegion(ctx)
+		if err != nil {
+			return nil, &providerError{err: err}
+		}
+	}
+
+	provider.AWSRegion = awsCredentials.Region
+
+	provider.Client, err = ocmclient.New(ctx, token, ocmEnvironment)
 	if err != nil {
 		return nil, &providerError{err: err}
 	}
 
-	return &Provider{
-		awsCredentials: awsCredentials,
-		ocmEnvironment: ocmEnvironment,
-		rosaBinary:     rosaBinary,
-		Client:         ocmClient,
-		log:            logger,
-	}, nil
+	return provider, nil
 }
