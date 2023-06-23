@@ -149,7 +149,14 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		return clusterID, &clusterError{action: action, err: err}
 	}
 
-	err = r.waitForClusterToBeHealthy(ctx, client, options.WorkingDir, options.HostedCP, options.HealthCheckTimeout)
+	err = r.waitForClusterToBeHealthy(
+		ctx,
+		client,
+		clusterID,
+		options.WorkingDir,
+		options.HostedCP,
+		options.HealthCheckTimeout,
+	)
 	if err != nil {
 		return clusterID, &clusterError{action: action, err: err}
 	}
@@ -479,9 +486,14 @@ func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, c
 }
 
 // waitForClusterToBeHealthy waits for the cluster health check job to succeed
-func (r *Provider) waitForClusterToBeHealthy(ctx context.Context, client *openshiftclient.Client, reportDir string, hostedCP bool, timeout time.Duration) error {
+func (r *Provider) waitForClusterToBeHealthy(ctx context.Context, client *openshiftclient.Client, clusterID, reportDir string, hostedCP bool, timeout time.Duration) error {
 	if hostedCP {
-		return client.HCPClusterHealthy(ctx, timeout)
+		cluster, err := r.findCluster(ctx, clusterID)
+		if err != nil {
+			return fmt.Errorf("hosted control plane cluster pre health check tasks failed, unable to locate cluster: %v", err)
+		}
+
+		return client.HCPClusterHealthy(ctx, cluster.Nodes().Compute(), timeout)
 	}
 	return client.OSDClusterHealthy(ctx, "osd-cluster-ready", reportDir, timeout)
 }
