@@ -13,12 +13,13 @@ import (
 
 // regionError represents the custom error
 type regionError struct {
-	err error
+	action string
+	err    error
 }
 
 // Error returns the formatted error message when regionError is invoked
 func (r *regionError) Error() string {
-	return fmt.Sprintf("region check failed: %v", r.err)
+	return fmt.Sprintf("region %s failed: %v", r.action, r.err)
 }
 
 // region represents a rosa aws region object
@@ -42,11 +43,12 @@ type cloudProvider struct {
 // regionCheck verifies the region provided supports either hosted control plane clusters
 // or multi az clusters based on the cluster creation options
 func (r *Provider) regionCheck(ctx context.Context, regionName string, hostedCP, multiAZ bool) error {
+	const action = "check"
 	regionFound := false
 
 	regions, err := r.regions(ctx, hostedCP, multiAZ)
 	if err != nil {
-		return &regionError{err}
+		return &regionError{action: action, err: err}
 	}
 
 	r.log.Info("Performing ROSA AWS region check", "region", regionName, "hostedCP", hostedCP, "multiAZ", multiAZ)
@@ -59,14 +61,14 @@ func (r *Provider) regionCheck(ctx context.Context, regionName string, hostedCP,
 		regionFound = true
 
 		if !region.Enabled {
-			return &regionError{fmt.Errorf("region %q is not enabled", regionName)}
+			return &regionError{action: action, err: fmt.Errorf("region %q is not enabled", regionName)}
 		}
 
 		break
 	}
 
 	if !regionFound {
-		return &regionError{fmt.Errorf("region %q is not enabled/valid for the aws account in use and "+
+		return &regionError{action: action, err: fmt.Errorf("region %q is not enabled/valid for the aws account in use and "+
 			"supports: hostedCP=%t, multiAZ=%t", regionName, hostedCP, multiAZ)}
 	}
 
@@ -97,7 +99,7 @@ func (r *Provider) selectRandomRegion(ctx context.Context) (string, error) {
 	})
 
 	if len(enabledRegions) == 0 {
-		return "", errors.New("no regions found")
+		return "", &regionError{action: "select random region", err: errors.New("no regions found")}
 	}
 
 	selectedRegion := enabledRegions[0]
@@ -109,6 +111,8 @@ func (r *Provider) selectRandomRegion(ctx context.Context) (string, error) {
 
 // regions returns a list of available aws regions for the rh/aws account used
 func (r *Provider) regions(ctx context.Context, hostedCP, multiAZ bool) ([]*region, error) {
+	const action = "list"
+
 	commandArgs := []string{
 		"list", "regions",
 		"--output", "json",
@@ -126,12 +130,12 @@ func (r *Provider) regions(ctx context.Context, hostedCP, multiAZ bool) ([]*regi
 
 	stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return nil, &regionError{fmt.Errorf("error: %v, stderr: %v", err, stderr)}
+		return nil, &regionError{action: action, err: fmt.Errorf("error: %v, stderr: %v", err, stderr)}
 	}
 
 	availableRegions, err := cmd.ConvertOutputToListOfMaps(stdout)
 	if err != nil {
-		return nil, &regionError{err: fmt.Errorf("failed to convert output to list of maps: %v", err)}
+		return nil, &regionError{action: action, err: fmt.Errorf("failed to convert output to list of maps: %v", err)}
 	}
 
 	var regions []*region
@@ -143,7 +147,7 @@ func (r *Provider) regions(ctx context.Context, hostedCP, multiAZ bool) ([]*regi
 
 	err = json.Unmarshal(availableRegionsBytes, &regions)
 	if err != nil {
-		return nil, &regionError{err: fmt.Errorf("failed to unmarshal region data: %v", err)}
+		return nil, &regionError{action: action, err: fmt.Errorf("failed to unmarshal region data: %v", err)}
 	}
 
 	return regions, nil
