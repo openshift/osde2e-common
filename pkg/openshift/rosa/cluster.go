@@ -173,15 +173,18 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 
 	options.setDefaultDeleteClusterOptions()
 
-	if options.HostedCP {
-		oidcConfig, err := r.getClusterOIDCConfig(ctx, options.ClusterID)
-		if err != nil {
-			return &clusterError{action: action, err: err}
-		}
-		options.oidcConfigID = oidcConfig.ID()
+	cluster, err := r.findCluster(ctx, options.ClusterName)
+	if err != nil {
+		return &clusterError{action: action, err: fmt.Errorf("failed to locate cluster in ocm environment: %s: %s", r.ocmEnvironment, err)}
 	}
 
-	err := r.deleteCluster(ctx, options.ClusterID)
+	operatorRolePrefix := cluster.AWS().STS().OperatorRolePrefix()
+
+	if options.HostedCP {
+		options.oidcConfigID = cluster.AWS().STS().OidcConfig().ID()
+	}
+
+	err = r.deleteCluster(ctx, options.ClusterID)
 	if err != nil {
 		return &clusterError{action: action, err: err}
 	}
@@ -192,12 +195,12 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 	}
 
 	if options.STS {
-		err = r.deleteOperatorRoles(ctx, options.ClusterID)
+		err = r.deleteOperatorRoles(ctx, options.ClusterID, operatorRolePrefix, options.oidcConfigID)
 		if err != nil {
 			return &clusterError{action: action, err: err}
 		}
 
-		err = r.deleteOIDCConfigProvider(ctx, options.ClusterID)
+		err = r.deleteOIDCConfigProvider(ctx, options.ClusterID, options.oidcConfigID)
 		if err != nil {
 			return &clusterError{action: action, err: err}
 		}

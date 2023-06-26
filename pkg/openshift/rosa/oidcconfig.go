@@ -88,16 +88,6 @@ func (r *Provider) deleteOIDCConfig(ctx context.Context, oidcConfigID string) er
 	return nil
 }
 
-// getClusterOIDCConfig retrieves the oidc config associated with the cluster
-func (r *Provider) getClusterOIDCConfig(ctx context.Context, clusterID string) (*clustersmgmtv1.OidcConfig, error) {
-	response, err := r.ClustersMgmt().V1().Clusters().Cluster(clusterID).Get().SendContext(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve cluster: %v", err)
-	}
-
-	return response.Body().AWS().STS().OidcConfig(), nil
-}
-
 // oidcConfigLookup checks if an oidc config already exists using the provided prefix
 func (r *Provider) oidcConfigLookup(ctx context.Context, prefix string) (*clustersmgmtv1.OidcConfig, error) {
 	response, err := r.ClustersMgmt().V1().OidcConfigs().List().SendContext(ctx)
@@ -115,12 +105,17 @@ func (r *Provider) oidcConfigLookup(ctx context.Context, prefix string) (*cluste
 }
 
 // deleteOIDCConfigProvider deletes the oidc config provider associated to the cluster
-func (r *Provider) deleteOIDCConfigProvider(ctx context.Context, clusterID string) error {
+func (r *Provider) deleteOIDCConfigProvider(ctx context.Context, clusterID, oidcConfigID string) error {
 	commandArgs := []string{
 		"delete", "oidc-provider",
-		"--cluster", clusterID,
 		"--mode", "auto",
 		"--yes",
+	}
+
+	if oidcConfigID != "" {
+		commandArgs = append(commandArgs, "--oidc-config-id", oidcConfigID)
+	} else {
+		commandArgs = append(commandArgs, "--cluster", clusterID)
 	}
 
 	r.log.Info("Deleting cluster oidc config provider", clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, r.ocmEnvironment)
