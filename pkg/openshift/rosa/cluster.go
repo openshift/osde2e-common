@@ -36,13 +36,12 @@ type CreateClusterOptions struct {
 	MachineCidr               string
 	Mode                      string
 	NetworkType               string
+	OidcConfigID              string
 	PodCIDR                   string
 	ServiceCIDR               string
 	SubnetIDs                 string
 	Version                   string
 	WorkingDir                string
-
-	oidcConfigID string
 
 	accountRoles accountRoles
 
@@ -61,9 +60,10 @@ type DeleteClusterOptions struct {
 
 	oidcConfigID string
 
-	DeleteHostedCPVPC bool
-	HostedCP          bool
-	STS               bool
+	DeleteHostedCPVPC  bool
+	DeleteOidcConfigID bool
+	HostedCP           bool
+	STS                bool
 
 	UninstallTimeout time.Duration
 }
@@ -105,16 +105,16 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 	}
 
 	if options.HostedCP {
-		oidcConfigID, err := r.createOIDCConfig(
-			ctx,
-			options.ClusterName,
-			options.accountRoles.installerRoleARN,
-		)
-		if err != nil {
-			return "", &clusterError{action: action, err: err}
+		if options.OidcConfigID == "" {
+			options.OidcConfigID, err = r.createOIDCConfig(
+				ctx,
+				options.ClusterName,
+				options.accountRoles.installerRoleARN,
+			)
+			if err != nil {
+				return "", &clusterError{action: action, err: err}
+			}
 		}
-
-		options.oidcConfigID = oidcConfigID
 
 		if options.SubnetIDs == "" {
 			vpc, err := r.createHostedControlPlaneVPC(
@@ -207,9 +207,11 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 	}
 
 	if options.HostedCP {
-		err := r.deleteOIDCConfig(ctx, options.oidcConfigID)
-		if err != nil {
-			return &clusterError{action: action, err: err}
+		if options.DeleteOidcConfigID {
+			err := r.deleteOIDCConfig(ctx, options.oidcConfigID)
+			if err != nil {
+				return &clusterError{action: action, err: err}
+			}
 		}
 
 		if options.DeleteHostedCPVPC {
@@ -264,7 +266,7 @@ func (r *Provider) validateCreateClusterOptions(options *CreateClusterOptions) (
 	}
 
 	if options.HostedCP {
-		if options.oidcConfigID == "" {
+		if options.OidcConfigID == "" {
 			errs = append(errs, errors.New("oidc config id is required for hosted control plane clusters"))
 		}
 
@@ -340,7 +342,7 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 
 	if options.HostedCP {
 		commandArgs = append(commandArgs, "--hosted-cp")
-		commandArgs = append(commandArgs, "--oidc-config-id", options.oidcConfigID)
+		commandArgs = append(commandArgs, "--oidc-config-id", options.OidcConfigID)
 		commandArgs = append(commandArgs, "--subnet-ids", options.SubnetIDs)
 	}
 
@@ -560,6 +562,7 @@ func (o *CreateClusterOptions) setHealthCheckTimeout(duration time.Duration) {
 func (o *DeleteClusterOptions) setDefaultDeleteClusterOptions() {
 	if o.HostedCP {
 		o.DeleteHostedCPVPC = true
+		o.DeleteOidcConfigID = true
 		o.STS = true
 	}
 
