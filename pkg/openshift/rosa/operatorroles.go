@@ -18,12 +18,17 @@ func (o *operatorRoleError) Error() string {
 }
 
 // deleteOIDCConfigProvider deletes the oidc config provider associated to the cluster
-func (r *Provider) deleteOperatorRoles(ctx context.Context, clusterID string) error {
+func (r *Provider) deleteOperatorRoles(ctx context.Context, clusterID, clusterPrefix, oidcConfigID string) error {
 	commandArgs := []string{
 		"delete", "operator-roles",
-		"--cluster", clusterID,
 		"--mode", "auto",
 		"--yes",
+	}
+
+	if oidcConfigID != "" {
+		commandArgs = append(commandArgs, "--prefix", clusterPrefix)
+	} else {
+		commandArgs = append(commandArgs, "--cluster", clusterID)
 	}
 
 	r.log.Info("Deleting cluster operator roles", clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, r.ocmEnvironment)
