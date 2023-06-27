@@ -16,8 +16,8 @@ func (c *Client) getKubeconfig(ctx context.Context, clusterID string) (string, e
 }
 
 // GetKubeconfig returns the clusters kubeconfig file
-func (c *Client) KubeconfigFile(ctx context.Context, clusterID string) (string, error) {
-	filename := fmt.Sprintf("%s-kubeconfig", clusterID)
+func (c *Client) KubeconfigFile(ctx context.Context, clusterID, directory string) (string, error) {
+	filename := fmt.Sprintf("%s/%s-kubeconfig", directory, clusterID)
 
 	kubeconfig, err := c.getKubeconfig(ctx, clusterID)
 	if err != nil {

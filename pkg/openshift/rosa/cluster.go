@@ -141,7 +141,7 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 	}
 
 	if !options.SkipHealthCheck {
-		kubeconfigFile, err := r.Client.KubeconfigFile(ctx, clusterID)
+		kubeconfigFile, err := r.Client.KubeconfigFile(ctx, clusterID, os.TempDir())
 		if err != nil {
 			return clusterID, &clusterError{action: action, err: err}
 		}
