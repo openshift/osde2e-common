@@ -561,8 +561,6 @@ func (o *CreateClusterOptions) setHealthCheckTimeout(duration time.Duration) {
 // setDefaultDeleteClusterOptions sets default options when creating clusters
 func (o *DeleteClusterOptions) setDefaultDeleteClusterOptions() {
 	if o.HostedCP {
-		o.DeleteHostedCPVPC = true
-		o.DeleteOidcConfigID = true
 		o.STS = true
 	}
 

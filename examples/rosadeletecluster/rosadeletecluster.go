@@ -39,14 +39,21 @@ func main() {
 		_ = provider.Client.Close()
 	}()
 
+	deleteOptions := &rosa.DeleteClusterOptions{
+		ClusterName: clusterName,
+		ClusterID:   clusterID,
+		HostedCP:    hostedCP,
+		STS:         sts,
+	}
+
+	if hostedCP {
+		deleteOptions.DeleteHostedCPVPC = true
+		deleteOptions.DeleteOidcConfigID = true
+	}
+
 	err = provider.DeleteCluster(
 		ctx,
-		&rosa.DeleteClusterOptions{
-			ClusterName: clusterName,
-			ClusterID:   clusterID,
-			HostedCP:    hostedCP,
-			STS:         sts,
-		},
+		deleteOptions,
 	)
 	if err != nil {
 		log.Fatalf("Failed to delete rosa cluster: %v", err)
