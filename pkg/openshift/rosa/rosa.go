@@ -50,7 +50,8 @@ func (r *providerError) Error() string {
 // RunCommand runs the rosa command provided
 func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (io.Writer, io.Writer, error) {
 	command.Env = append(command.Environ(), r.awsCredentials.CredentialsAsList()...)
-	r.log.Info("Command", rosaCommandLoggerKey, strings.Split(command.String(), "bin/")[1])
+	commandWithArgs := fmt.Sprintf("rosa%s", strings.Split(command.String(), "rosa")[1])
+	r.log.Info("Command", rosaCommandLoggerKey, commandWithArgs)
 	return cmd.Run(command)
 }
 
