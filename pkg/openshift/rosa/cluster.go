@@ -343,6 +343,9 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 	if options.HostedCP {
 		commandArgs = append(commandArgs, "--hosted-cp")
 		commandArgs = append(commandArgs, "--oidc-config-id", options.OidcConfigID)
+	}
+
+	if options.SubnetIDs != "" {
 		commandArgs = append(commandArgs, "--subnet-ids", options.SubnetIDs)
 	}
 
@@ -369,8 +372,6 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 	commandArgs = append(commandArgs, "--replicas", fmt.Sprint(options.Replicas))
 
 	if options.SubnetIDs != "" {
-		commandArgs = append(commandArgs, "--subnet-ids", options.SubnetIDs)
-
 		if options.HTTPProxy != "" {
 			commandArgs = append(commandArgs, "--http-proxy", options.HTTPProxy)
 		}
