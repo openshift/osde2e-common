@@ -56,6 +56,14 @@ func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (io.Writer
 	return cmd.Run(command)
 }
 
+// Uninstall removes the rosa cli that was downloaded to the systems temp directory
+func (r *Provider) Uninstall(ctx context.Context) error {
+	if strings.Contains(r.rosaBinary, os.TempDir()) {
+		return os.Remove(r.rosaBinary)
+	}
+	return nil
+}
+
 // cliExist checks if rosa cli is available else it will download it
 func cliCheck() (string, error) {
 	var (
