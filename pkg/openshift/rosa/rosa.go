@@ -144,32 +144,32 @@ func cliCheck() (string, error) {
 }
 
 // versionCheck verifies the rosa cli version meets the minimal version required
-func versionCheck(ctx context.Context, rosaBinary string) error {
+func versionCheck(ctx context.Context, rosaBinary string) (string, error) {
 	stdout, _, err := cmd.Run(exec.CommandContext(ctx, rosaBinary, "version"))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	versionSlice := strings.SplitAfter(fmt.Sprint(stdout), "\n")
 	if len(versionSlice) == 0 {
-		return fmt.Errorf("versionCheck failed to get version from cli standard out")
+		return "", fmt.Errorf("versionCheck failed to get version from cli standard out")
 	}
 
 	currentVersion, err := semver.NewVersion(strings.ReplaceAll(versionSlice[0], "\n", ""))
 	if err != nil {
-		return fmt.Errorf("versionCheck failed to parse version to semantic version: %v", err)
+		return "", fmt.Errorf("versionCheck failed to parse version to semantic version: %v", err)
 	}
 
 	minVersion, err := semver.NewVersion(minimumVersion)
 	if err != nil {
-		return fmt.Errorf("versionCheck failed to parse minimum version to semantic version: %v", err)
+		return "", fmt.Errorf("versionCheck failed to parse minimum version to semantic version: %v", err)
 	}
 
 	if minVersion.Compare(currentVersion) == 1 {
-		return fmt.Errorf("current rosa version is %q and must be >= %q", currentVersion.String(), minVersion)
+		return "", fmt.Errorf("current rosa version is %q and must be >= %q", currentVersion.String(), minVersion)
 	}
 
-	return nil
+	return currentVersion.String(), nil
 }
 
 // verifyLogin validates the authentication details provided are valid by logging in with rosa cli
@@ -204,10 +204,12 @@ func New(ctx context.Context, token string, ocmEnvironment ocmclient.Environment
 		return nil, &providerError{err: err}
 	}
 
-	err = versionCheck(ctx, rosaBinary)
+	version, err := versionCheck(ctx, rosaBinary)
 	if err != nil {
 		return nil, &providerError{err: err}
 	}
+
+	logger.Info("ROSA version", "version", version)
 
 	awsCredentials := &awscloud.AWSCredentials{}
 	if len(args) == 1 {
