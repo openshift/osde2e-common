@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -16,13 +17,16 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/wait"
 )
 
+const defaultAccountRolesPrefix = "ManagedOpenShift"
+
 // CreateClusterOptions represents data used to create clusters
 type CreateClusterOptions struct {
-	FIPS            bool
-	HostedCP        bool
-	MultiAZ         bool
-	STS             bool
-	SkipHealthCheck bool
+	FIPS                         bool
+	HostedCP                     bool
+	MultiAZ                      bool
+	STS                          bool
+	SkipHealthCheck              bool
+	UseDefaultAccountRolesPrefix bool
 
 	HostPrefix int
 	Replicas   int
@@ -97,7 +101,12 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		}
 		majorMinor := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
 
-		accountRoles, err := r.createAccountRoles(ctx, options.ClusterName, majorMinor, options.ChannelGroup)
+		accountRolesPrefix := options.ClusterName
+		if options.UseDefaultAccountRolesPrefix {
+			accountRolesPrefix = fmt.Sprintf("%s-%s", defaultAccountRolesPrefix, majorMinor)
+		}
+
+		accountRoles, err := r.createAccountRoles(ctx, accountRolesPrefix, majorMinor, options.ChannelGroup)
 		if err != nil {
 			return "", &clusterError{action: action, err: err}
 		}
@@ -141,7 +150,7 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 	}
 
 	if !options.SkipHealthCheck {
-		kubeconfigFile, err := r.Client.KubeconfigFile(ctx, clusterID)
+		kubeconfigFile, err := r.Client.KubeconfigFile(ctx, clusterID, os.TempDir())
 		if err != nil {
 			return clusterID, &clusterError{action: action, err: err}
 		}
@@ -228,9 +237,11 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 	}
 
 	if options.STS {
-		err = r.deleteAccountRoles(ctx, options.ClusterName)
-		if err != nil {
-			return &clusterError{action: action, err: err}
+		if !strings.Contains(cluster.AWS().STS().RoleARN(), defaultAccountRolesPrefix) {
+			err = r.deleteAccountRoles(ctx, options.ClusterName)
+			if err != nil {
+				return &clusterError{action: action, err: err}
+			}
 		}
 	}
 
@@ -343,6 +354,9 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 	if options.HostedCP {
 		commandArgs = append(commandArgs, "--hosted-cp")
 		commandArgs = append(commandArgs, "--oidc-config-id", options.OidcConfigID)
+	}
+
+	if options.SubnetIDs != "" {
 		commandArgs = append(commandArgs, "--subnet-ids", options.SubnetIDs)
 	}
 
@@ -369,8 +383,6 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 	commandArgs = append(commandArgs, "--replicas", fmt.Sprint(options.Replicas))
 
 	if options.SubnetIDs != "" {
-		commandArgs = append(commandArgs, "--subnet-ids", options.SubnetIDs)
-
 		if options.HTTPProxy != "" {
 			commandArgs = append(commandArgs, "--http-proxy", options.HTTPProxy)
 		}
@@ -561,8 +573,6 @@ func (o *CreateClusterOptions) setHealthCheckTimeout(duration time.Duration) {
 // setDefaultDeleteClusterOptions sets default options when creating clusters
 func (o *DeleteClusterOptions) setDefaultDeleteClusterOptions() {
 	if o.HostedCP {
-		o.DeleteHostedCPVPC = true
-		o.DeleteOidcConfigID = true
 		o.STS = true
 	}
 

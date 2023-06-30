@@ -22,7 +22,7 @@ import (
 
 const (
 	downloadURL    = "https://mirror.openshift.com/pub/openshift-v4/clients/rosa"
-	minimumVersion = "1.2.22"
+	minimumVersion = "1.2.23"
 	tarFilename    = "rosa.tar.gz"
 )
 
@@ -50,7 +50,9 @@ func (r *providerError) Error() string {
 // RunCommand runs the rosa command provided
 func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (io.Writer, io.Writer, error) {
 	command.Env = append(command.Environ(), r.awsCredentials.CredentialsAsList()...)
-	r.log.Info("Command", rosaCommandLoggerKey, strings.Split(command.String(), "bin/")[1])
+	command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
+	commandWithArgs := fmt.Sprintf("rosa%s", strings.Split(command.String(), "rosa")[1])
+	r.log.Info("Command", rosaCommandLoggerKey, commandWithArgs)
 	return cmd.Run(command)
 }
 
@@ -180,6 +182,7 @@ func verifyLogin(ctx context.Context, rosaBinary string, token string, ocmEnviro
 
 	command := exec.CommandContext(ctx, rosaBinary, commandArgs...)
 	command.Env = append(command.Environ(), awsCredentials.CredentialsAsList()...)
+	command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
 
 	_, _, err := cmd.Run(command)
 	if err != nil {
