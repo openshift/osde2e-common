@@ -13,5 +13,6 @@ const (
 	prefixLoggerKey              = "prefix"
 	rosaCommandLoggerKey         = "rosaCommand"
 	terraformWorkingDirLoggerKey = "terraformWorkingDir"
+	timeoutLoggerKey             = "timeout"
 	versionLoggerKey             = "version"
 )
