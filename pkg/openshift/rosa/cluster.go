@@ -483,7 +483,7 @@ func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, c
 		return clusterState, err
 	}
 
-	r.log.Info("Waiting for cluster to be installed", clusterIDLoggerKey, clusterID, clusterNameLoggerKey, clusterName, ocmEnvironmentLoggerKey, r.ocmEnvironment)
+	r.log.Info("Waiting for cluster to be installed", clusterIDLoggerKey, clusterID, clusterNameLoggerKey, clusterName, timeoutLoggerKey, timeout, ocmEnvironmentLoggerKey, r.ocmEnvironment)
 
 	err := wait.For(func() (bool, error) {
 		clusterState, err := getClusterState()
@@ -500,7 +500,7 @@ func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, c
 		return true, nil
 	}, wait.WithTimeout(timeout), wait.WithInterval(30*time.Second))
 	if err != nil {
-		return fmt.Errorf("cluster %q failed to enter ready state in the alloted time", clusterID)
+		return fmt.Errorf("cluster %q failed to enter ready state in the alloted time %q", clusterID, timeout)
 	}
 	return nil
 }
