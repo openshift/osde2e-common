@@ -51,7 +51,7 @@ func (r *Provider) Versions(ctx context.Context, channelGroup string, hostedCP b
 	}
 
 	r.log.Info("Getting rosa versions", clusterChannelGroupLoggerKey, channelGroup,
-		"hostedCP", hostedCP, ocmEnvironmentLoggerKey, r.ocmEnvironment)
+		"hosted_cp", hostedCP, ocmEnvironmentLoggerKey, r.ocmEnvironment)
 
 	stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
@@ -76,7 +76,7 @@ func (r *Provider) Versions(ctx context.Context, channelGroup string, hostedCP b
 	}
 
 	r.log.Info("ROSA versions retrieved!", clusterChannelGroupLoggerKey, channelGroup,
-		"hostedCP", hostedCP, ocmEnvironmentLoggerKey, r.ocmEnvironment)
+		"hosted_cp", hostedCP, ocmEnvironmentLoggerKey, r.ocmEnvironment)
 
 	return versions, nil
 }
