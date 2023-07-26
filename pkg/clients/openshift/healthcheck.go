@@ -60,16 +60,16 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 
 		clientSet, err := kubernetes.NewForConfig(c.GetConfig())
 		if err != nil {
-			return fmt.Errorf("failed to create kubernetes clientset: %v", err)
+			return fmt.Errorf("failed to create kubernetes clientset: %w", err)
 		}
 		request := clientSet.CoreV1().Pods(osdClusterReadyNamespace).GetLogs(podName, &corev1.PodLogOptions{})
 		logData, err := request.DoRaw(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to get pod %s logs: %v", podName, err)
+			return fmt.Errorf("failed to get pod %s logs: %w", podName, err)
 		}
 
 		if err = os.WriteFile(fmt.Sprintf("%s/%s.log", reportDir, jobName), logData, os.FileMode(0o644)); err != nil {
-			return fmt.Errorf("failed to write pod %s logs to file: %v", podName, err)
+			return fmt.Errorf("failed to write pod %s logs to file: %w", podName, err)
 		}
 
 		return fmt.Errorf("%s failed to complete in desired time/health checks have failed", jobName)
@@ -111,7 +111,7 @@ func (c *Client) HCPClusterHealthy(ctx context.Context, computeNodes int, timeou
 		return len(nodes.Items) == computeNodes, nil
 	}, wait.WithTimeout(timeout))
 	if err != nil {
-		return fmt.Errorf("hosted control plane cluster health check failed: %v", err)
+		return fmt.Errorf("hosted control plane cluster health check failed: %w", err)
 	}
 
 	c.log.Info("Hosted control plane cluster health check finished successfully!")
