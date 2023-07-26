@@ -212,7 +212,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		options.oidcConfigID = cluster.AWS().STS().OidcConfig().ID()
 	}
 
-	err = r.deleteCluster(ctx, options.ClusterID)
+	err = r.deleteCluster(ctx, cluster.ID())
 	if err != nil {
 		return &clusterError{action: action, err: err}
 	}
@@ -223,12 +223,12 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 	}
 
 	if options.STS {
-		err = r.deleteOperatorRoles(ctx, options.ClusterID, operatorRolePrefix, options.oidcConfigID)
+		err = r.deleteOperatorRoles(ctx, cluster.ID(), operatorRolePrefix, options.oidcConfigID)
 		if err != nil {
 			return &clusterError{action: action, err: err}
 		}
 
-		err = r.deleteOIDCConfigProvider(ctx, options.ClusterID, options.oidcConfigID)
+		err = r.deleteOIDCConfigProvider(ctx, cluster.ID(), options.oidcConfigID)
 		if err != nil {
 			return &clusterError{action: action, err: err}
 		}
