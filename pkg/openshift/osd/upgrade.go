@@ -85,7 +85,7 @@ func (o *Provider) gateAgreementExistForCluster(ctx context.Context, clusterID, 
 
 	for _, gateAgreement := range response.Items().Slice() {
 		if gateAgreement.VersionGate().ID() == gateAgreementID {
-			o.log.Info("Gate agreement exists", clusterIDLoggerKey, clusterID, "gateAgreementID", gateAgreementID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
+			o.log.Info("Gate agreement exists", clusterIDLoggerKey, clusterID, "gate_agreement_id", gateAgreementID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
 			return true, nil
 		}
 	}
@@ -150,7 +150,7 @@ func (o *Provider) initiateUpgrade(ctx context.Context, clusterID, version strin
 		return fmt.Errorf("failed to apply upgrade policy to cluster %q, %v", clusterID, err)
 	}
 
-	o.log.Info("Cluster upgrade scheduled!", clusterIDLoggerKey, clusterID, "upgradeVersion", response.Body().Version(),
+	o.log.Info("Cluster upgrade scheduled!", clusterIDLoggerKey, clusterID, "upgrade_version", response.Body().Version(),
 		"upgradeTime", response.Body().NextRun().Format(time.RFC3339), ocmEnvironmentLoggerKey, o.ocmEnvironment)
 
 	return nil
@@ -309,7 +309,7 @@ func (o *Provider) OCMUpgrade(ctx context.Context, client *openshift.Client, clu
 			o.log.Info("Upgrade has not started yet...", clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
 			time.Sleep(upgradeDelay * time.Second)
 		case "Failed", clusterIDLoggerKey, clusterID:
-			o.log.Info("Upgrade failed!", "conditionMessage", conditionMessage, clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
+			o.log.Info("Upgrade failed!", "condition_message", conditionMessage, clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
 			return &upgradeError{err: fmt.Errorf("upgrade failed")}
 		case "Upgraded":
 			o.log.Info("Upgrade complete!", clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
@@ -318,7 +318,7 @@ func (o *Provider) OCMUpgrade(ctx context.Context, client *openshift.Client, clu
 			o.log.Info("Upgrade is pending...", clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
 			time.Sleep(upgradeDelay * time.Second)
 		case "Upgrading":
-			o.log.Info("Upgrade is in progress", "conditionMessage", conditionMessage, clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
+			o.log.Info("Upgrade is in progress", "condition_message", conditionMessage, clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
 			time.Sleep(upgradeDelay * time.Second)
 		}
 	}
