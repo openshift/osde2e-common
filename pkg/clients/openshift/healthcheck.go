@@ -18,7 +18,7 @@ import (
 
 const (
 	osdClusterReadyNamespace = "openshift-monitoring"
-	jobNameLoggerKey         = "jobName"
+	jobNameLoggerKey         = "job_name"
 	timeoutLoggerKey         = "timeout"
 )
 
