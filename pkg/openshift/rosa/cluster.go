@@ -9,11 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	clustersmgmtv1 "github.com/openshift-online/ocm-sdk-go/clustersmgmt/v1"
 	"github.com/openshift/osde2e-common/internal/cmd"
 	openshiftclient "github.com/openshift/osde2e-common/pkg/clients/openshift"
-
 	"sigs.k8s.io/e2e-framework/klient/wait"
 )
 
@@ -88,6 +87,26 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 	const action = "create"
 
 	options.setDefaultCreateClusterOptions()
+
+	if options.ChannelGroup == "nightly" {
+		// TODO: validate version is as expected
+		r.log.Info("Waiting up to 5 minutes for nightly version to be available", "version", options.Version)
+		if err := wait.For(func() (bool, error) {
+			versions, err := r.Versions(ctx, options.ChannelGroup, options.HostedCP)
+			if err != nil {
+				return false, err
+			}
+			for _, version := range versions {
+				if strings.Contains(version.ID, options.Version) {
+					r.log.Info("Nightly version found in the nightly channel-group", "version", options.Version)
+					return true, nil
+				}
+			}
+			return false, nil
+		}); err != nil {
+			return "", &clusterError{action: action, err: err}
+		}
+	}
 
 	err := r.regionCheck(ctx, r.awsCredentials.Region, options.HostedCP, options.MultiAZ)
 	if err != nil {
@@ -193,7 +212,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		options.oidcConfigID = cluster.AWS().STS().OidcConfig().ID()
 	}
 
-	err = r.deleteCluster(ctx, options.ClusterID)
+	err = r.deleteCluster(ctx, cluster.ID())
 	if err != nil {
 		return &clusterError{action: action, err: err}
 	}
@@ -204,12 +223,12 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 	}
 
 	if options.STS {
-		err = r.deleteOperatorRoles(ctx, options.ClusterID, operatorRolePrefix, options.oidcConfigID)
+		err = r.deleteOperatorRoles(ctx, cluster.ID(), operatorRolePrefix, options.oidcConfigID)
 		if err != nil {
 			return &clusterError{action: action, err: err}
 		}
 
-		err = r.deleteOIDCConfigProvider(ctx, options.ClusterID, options.oidcConfigID)
+		err = r.deleteOIDCConfigProvider(ctx, cluster.ID(), options.oidcConfigID)
 		if err != nil {
 			return &clusterError{action: action, err: err}
 		}

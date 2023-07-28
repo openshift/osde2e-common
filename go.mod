@@ -3,7 +3,7 @@ module github.com/openshift/osde2e-common
 go 1.19
 
 require (
-	github.com/Masterminds/semver v1.5.0
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/go-logr/logr v1.2.4
 	github.com/hashicorp/hc-install v0.5.2
 	github.com/hashicorp/terraform-exec v0.18.1

@@ -51,7 +51,7 @@ func (r *Provider) regionCheck(ctx context.Context, regionName string, hostedCP,
 		return &regionError{action: action, err: err}
 	}
 
-	r.log.Info("Performing ROSA AWS region check", "region", regionName, "hostedCP", hostedCP, "multiAZ", multiAZ)
+	r.log.Info("Performing ROSA AWS region check", "region", regionName, "hosted_cp", hostedCP, "multi_az", multiAZ)
 
 	for _, region := range regions {
 		if region.ID != regionName {
@@ -72,7 +72,7 @@ func (r *Provider) regionCheck(ctx context.Context, regionName string, hostedCP,
 			"supports: hostedCP=%t, multiAZ=%t", regionName, hostedCP, multiAZ)}
 	}
 
-	r.log.Info("ROSA AWS region check passed", "region", regionName, "hostedCP", hostedCP, "multiAZ", multiAZ)
+	r.log.Info("ROSA AWS region check passed", "region", regionName, "hosted_cp", hostedCP, "multi_az", multiAZ)
 
 	return nil
 }
@@ -126,7 +126,7 @@ func (r *Provider) regions(ctx context.Context, hostedCP, multiAZ bool) ([]*regi
 		commandArgs = append(commandArgs, "--multi-az")
 	}
 
-	r.log.Info("Performing ROSA list regions", "hostedCP", hostedCP, "multiAZ", multiAZ)
+	r.log.Info("Performing ROSA list regions", "hosted_cp", hostedCP, "multi_az", multiAZ)
 
 	stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {

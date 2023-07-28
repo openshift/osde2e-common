@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/openshift/osde2e-common/internal/cmd"
 )
 
@@ -37,7 +38,7 @@ type version struct {
 }
 
 // Versions returns the rosa versions for the supported channel and additional options provided
-func (r *Provider) Versions(ctx context.Context, channelGroup string, hostedCP bool) ([]*version, error) {
+func (r *Provider) Versions(ctx context.Context, channelGroup string, hostedCP bool, constraints ...string) ([]*version, error) {
 	const action = "get"
 
 	commandArgs := []string{
@@ -51,7 +52,7 @@ func (r *Provider) Versions(ctx context.Context, channelGroup string, hostedCP b
 	}
 
 	r.log.Info("Getting rosa versions", clusterChannelGroupLoggerKey, channelGroup,
-		"hostedCP", hostedCP, ocmEnvironmentLoggerKey, r.ocmEnvironment)
+		"hosted_cp", hostedCP, ocmEnvironmentLoggerKey, r.ocmEnvironment)
 
 	stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
@@ -76,7 +77,28 @@ func (r *Provider) Versions(ctx context.Context, channelGroup string, hostedCP b
 	}
 
 	r.log.Info("ROSA versions retrieved!", clusterChannelGroupLoggerKey, channelGroup,
-		"hostedCP", hostedCP, ocmEnvironmentLoggerKey, r.ocmEnvironment)
+		"hosted_cp", hostedCP, ocmEnvironmentLoggerKey, r.ocmEnvironment)
+
+	if len(constraints) > 0 {
+		var filteredVersions []*version
+		for _, constraint := range constraints {
+			semverConstraint, err := semver.NewConstraint(constraint)
+			if err != nil {
+				return nil, &versionError{action: action, err: fmt.Errorf("unable to build a constraint from %q: %w", constraint, err)}
+			}
+
+			for _, version := range versions {
+				parsedVersion, err := semver.NewVersion(version.RawID)
+				if err != nil {
+					return nil, &versionError{action: action, err: fmt.Errorf("failed to build version: %w", err)}
+				}
+				if semverConstraint.Check(parsedVersion) {
+					filteredVersions = append(filteredVersions, version)
+				}
+			}
+		}
+		return filteredVersions, nil
+	}
 
 	return versions, nil
 }

@@ -9,6 +9,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -29,7 +30,18 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 
 	err := c.Get(ctx, jobName, osdClusterReadyNamespace, &job)
 	if err != nil {
-		return fmt.Errorf("failed to get existing %s job %v", jobName, err)
+		if apierrors.IsNotFound(err) {
+			if err = wait.For(func() (bool, error) {
+				if err = c.Get(ctx, jobName, osdClusterReadyNamespace, &job); err != nil {
+					return false, err
+				}
+				return true, nil
+			}); err != nil {
+				return fmt.Errorf("job %s never found: %w", jobName, err)
+			}
+		} else {
+			return fmt.Errorf("failed to get existing %s job %w", jobName, err)
+		}
 	}
 
 	c.log.Info("Wait for cluster job to finish", jobNameLoggerKey, jobName, timeoutLoggerKey, timeout)
@@ -48,16 +60,16 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 
 		clientSet, err := kubernetes.NewForConfig(c.GetConfig())
 		if err != nil {
-			return fmt.Errorf("failed to create kubernetes clientset: %v", err)
+			return fmt.Errorf("failed to create kubernetes clientset: %w", err)
 		}
 		request := clientSet.CoreV1().Pods(osdClusterReadyNamespace).GetLogs(podName, &corev1.PodLogOptions{})
 		logData, err := request.DoRaw(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to get pod %s logs: %v", podName, err)
+			return fmt.Errorf("failed to get pod %s logs: %w", podName, err)
 		}
 
 		if err = os.WriteFile(fmt.Sprintf("%s/%s.log", reportDir, jobName), logData, os.FileMode(0o644)); err != nil {
-			return fmt.Errorf("failed to write pod %s logs to file: %v", podName, err)
+			return fmt.Errorf("failed to write pod %s logs to file: %w", podName, err)
 		}
 
 		return fmt.Errorf("%s failed to complete in desired time/health checks have failed", jobName)
@@ -99,7 +111,7 @@ func (c *Client) HCPClusterHealthy(ctx context.Context, computeNodes int, timeou
 		return len(nodes.Items) == computeNodes, nil
 	}, wait.WithTimeout(timeout))
 	if err != nil {
-		return fmt.Errorf("hosted control plane cluster health check failed: %v", err)
+		return fmt.Errorf("hosted control plane cluster health check failed: %w", err)
 	}
 
 	c.log.Info("Hosted control plane cluster health check finished successfully!")
