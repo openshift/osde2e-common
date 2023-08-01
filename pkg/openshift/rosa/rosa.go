@@ -22,7 +22,7 @@ import (
 
 const (
 	downloadURL    = "https://mirror.openshift.com/pub/openshift-v4/clients/rosa"
-	minimumVersion = "1.2.23"
+	minimumVersion = "1.2.24"
 	tarFilename    = "rosa.tar.gz"
 )
 
