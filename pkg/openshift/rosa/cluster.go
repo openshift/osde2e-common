@@ -519,7 +519,7 @@ func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, c
 		return true, nil
 	}, wait.WithTimeout(timeout), wait.WithInterval(30*time.Second))
 	if err != nil {
-		return fmt.Errorf("cluster %q failed to enter ready state in the alloted time %q", clusterID, timeout)
+		return fmt.Errorf("cluster %q failed to enter ready state in the alloted time %q: %w", clusterID, timeout, err)
 	}
 	return nil
 }
