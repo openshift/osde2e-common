@@ -72,7 +72,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 			return fmt.Errorf("failed to write pod %s logs to file: %w", podName, err)
 		}
 
-		return fmt.Errorf("%s failed to complete in desired time/health checks have failed", jobName)
+		return fmt.Errorf("%s failed to complete in desired time/health checks have failed: %w", jobName, err)
 	}
 
 	c.log.Info("Cluster job finished successfully!", jobNameLoggerKey, jobName)
