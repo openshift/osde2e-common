@@ -57,7 +57,6 @@ type CreateClusterOptions struct {
 
 // DeleteClusterOptions represents data used to delete clusters
 type DeleteClusterOptions struct {
-	ClusterID   string
 	ClusterName string
 	WorkingDir  string
 
@@ -217,7 +216,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		return &clusterError{action: action, err: err}
 	}
 
-	err = r.waitForClusterToBeDeleted(ctx, options.ClusterName, options.WorkingDir, options.UninstallTimeout)
+	err = r.waitForClusterToBeDeleted(ctx, cluster.Name(), options.WorkingDir, options.UninstallTimeout)
 	if err != nil {
 		return &clusterError{action: action, err: err}
 	}
@@ -245,7 +244,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		if options.DeleteHostedCPVPC {
 			err = r.deleteHostedControlPlaneVPC(
 				ctx,
-				options.ClusterName,
+				cluster.Name(),
 				r.awsCredentials.Region,
 				options.WorkingDir,
 			)
@@ -441,7 +440,7 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 
 // findCluster gets the cluster the body
 func (r *Provider) findCluster(ctx context.Context, clusterName string) (*clustersmgmtv1.Cluster, error) {
-	query := fmt.Sprintf("product.id = 'rosa' AND name = '%s'", clusterName)
+	query := fmt.Sprintf("product.id = 'rosa' AND (name = '%[1]s' OR id = '%[1]s')", clusterName)
 	response, err := r.ClustersMgmt().V1().Clusters().List().
 		Search(query).
 		Page(1).

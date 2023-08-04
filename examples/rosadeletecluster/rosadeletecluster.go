@@ -16,7 +16,6 @@ func main() {
 		ctx = context.Background()
 
 		clusterName = "cluster-123"
-		clusterID   = "cluster-123-id"
 
 		hostedCP = false
 		sts      = true
@@ -41,7 +40,6 @@ func main() {
 
 	deleteOptions := &rosa.DeleteClusterOptions{
 		ClusterName: clusterName,
-		ClusterID:   clusterID,
 		HostedCP:    hostedCP,
 		STS:         sts,
 	}
@@ -59,5 +57,5 @@ func main() {
 		log.Fatalf("Failed to delete rosa cluster: %v", err)
 	}
 
-	logger.Info("Cluster deleted!", "clusterID", clusterID)
+	logger.Info("Cluster deleted!", "clusterName", clusterName)
 }
