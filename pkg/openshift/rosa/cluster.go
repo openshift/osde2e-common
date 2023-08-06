@@ -30,6 +30,7 @@ type CreateClusterOptions struct {
 	HostPrefix int
 	Replicas   int
 
+	ArtifactDir               string
 	AdditionalTrustBundleFile string
 	ChannelGroup              string
 	ClusterName               string
@@ -57,6 +58,7 @@ type CreateClusterOptions struct {
 
 // DeleteClusterOptions represents data used to delete clusters
 type DeleteClusterOptions struct {
+	ArtifactDir string
 	ClusterName string
 	WorkingDir  string
 
@@ -162,7 +164,7 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		return "", &clusterError{action: action, err: err}
 	}
 
-	err = r.waitForClusterToBeInstalled(ctx, clusterID, options.ClusterName, options.WorkingDir, options.InstallTimeout)
+	err = r.waitForClusterToBeInstalled(ctx, clusterID, options.ClusterName, options.ArtifactDir, options.InstallTimeout)
 	if err != nil {
 		return clusterID, &clusterError{action: action, err: err}
 	}
@@ -182,7 +184,7 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 			ctx,
 			client,
 			options.ClusterName,
-			options.WorkingDir,
+			options.ArtifactDir,
 			options.HostedCP,
 			options.HealthCheckTimeout,
 		)
@@ -216,7 +218,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		return &clusterError{action: action, err: err}
 	}
 
-	err = r.waitForClusterToBeDeleted(ctx, cluster.Name(), options.WorkingDir, options.UninstallTimeout)
+	err = r.waitForClusterToBeDeleted(ctx, cluster.Name(), options.ArtifactDir, options.UninstallTimeout)
 	if err != nil {
 		return &clusterError{action: action, err: err}
 	}
@@ -571,6 +573,10 @@ func (o *CreateClusterOptions) setDefaultCreateClusterOptions() {
 		o.setHealthCheckTimeout(45)
 	}
 
+	if o.ArtifactDir == "" {
+		o.ArtifactDir = os.TempDir()
+	}
+
 	if o.WorkingDir == "" {
 		o.WorkingDir = os.TempDir()
 	}
@@ -592,6 +598,10 @@ func (o *CreateClusterOptions) setHealthCheckTimeout(duration time.Duration) {
 func (o *DeleteClusterOptions) setDefaultDeleteClusterOptions() {
 	if o.HostedCP {
 		o.STS = true
+	}
+
+	if o.ArtifactDir == "" {
+		o.ArtifactDir = os.TempDir()
 	}
 
 	if o.WorkingDir == "" {
