@@ -2,7 +2,6 @@ package openshift
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -50,7 +49,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 	if err != nil {
 		var pods corev1.PodList
 		if err = c.List(ctx, &pods, resources.WithLabelSelector(labels.FormatLabels(map[string]string{"job-name": jobName}))); err != nil {
-			return errors.New("failed to get pods")
+			return fmt.Errorf("failed to list pods: %w", err)
 		}
 
 		if len(pods.Items) != 1 {
