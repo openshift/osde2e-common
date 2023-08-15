@@ -9,9 +9,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 )
@@ -47,30 +44,13 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 
 	err = wait.For(conditions.New(c.Resources).JobCompleted(&job), wait.WithTimeout(timeout))
 	if err != nil {
-		var pods corev1.PodList
-		if err = c.List(ctx, &pods, resources.WithLabelSelector(labels.FormatLabels(map[string]string{"job-name": jobName}))); err != nil {
-			return fmt.Errorf("failed to list pods: %w", err)
-		}
-
-		if len(pods.Items) != 1 {
-			return fmt.Errorf("no pods found for job %s", jobName)
-		}
-		podName := pods.Items[0].GetName()
-
-		clientSet, err := kubernetes.NewForConfig(c.GetConfig())
+		logs, err := c.GetJobLogs(ctx, jobName, osdClusterReadyNamespace)
 		if err != nil {
-			return fmt.Errorf("failed to create kubernetes clientset: %w", err)
+			return fmt.Errorf("unable to get job logs for %s/%s: %w", osdClusterReadyNamespace, jobName, err)
 		}
-		request := clientSet.CoreV1().Pods(osdClusterReadyNamespace).GetLogs(podName, &corev1.PodLogOptions{})
-		logData, err := request.DoRaw(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get pod %s logs: %w", podName, err)
+		if err = os.WriteFile(fmt.Sprintf("%s/%s.log", reportDir, jobName), []byte(logs), os.FileMode(0o644)); err != nil {
+			return fmt.Errorf("failed to write job %s logs to file: %w", jobName, err)
 		}
-
-		if err = os.WriteFile(fmt.Sprintf("%s/%s.log", reportDir, jobName), logData, os.FileMode(0o644)); err != nil {
-			return fmt.Errorf("failed to write pod %s logs to file: %w", podName, err)
-		}
-
 		return fmt.Errorf("%s failed to complete in desired time/health checks have failed: %w", jobName, err)
 	}
 
