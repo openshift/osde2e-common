@@ -32,7 +32,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 					return false, err
 				}
 				return true, nil
-			}); err != nil {
+			}, wait.WithTimeout(10*time.Minute)); err != nil {
 				return fmt.Errorf("job %s never found: %w", jobName, err)
 			}
 		} else {
