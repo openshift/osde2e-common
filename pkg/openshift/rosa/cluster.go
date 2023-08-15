@@ -567,7 +567,7 @@ func (o *CreateClusterOptions) setDefaultCreateClusterOptions() {
 	if o.HostedCP {
 		o.STS = true
 		o.setInstallTimeout(30)
-		o.setHealthCheckTimeout(10)
+		o.setHealthCheckTimeout(20)
 	} else {
 		o.setInstallTimeout(120)
 		o.setHealthCheckTimeout(45)
