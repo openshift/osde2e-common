@@ -23,7 +23,6 @@ import (
 const (
 	downloadURL    = "https://mirror.openshift.com/pub/openshift-v4/clients/rosa"
 	minimumVersion = "1.2.24"
-	tarFilename    = "rosa.tar.gz"
 )
 
 // Provider is a rosa provider
@@ -67,12 +66,13 @@ func (r *Provider) Uninstall(ctx context.Context) error {
 // cliExist checks if rosa cli is available else it will download it
 func cliCheck() (string, error) {
 	var (
-		url          = fmt.Sprintf("%s/%s", downloadURL, minimumVersion)
-		rosaFilename = fmt.Sprintf("%s/rosa", os.TempDir())
+		url             = fmt.Sprintf("%s/%s", downloadURL, minimumVersion)
+		rosaFilename    = fmt.Sprintf("%s/rosa", os.TempDir())
+		rosaTarFilePath = fmt.Sprintf("%s/rosa.tar.gz", os.TempDir())
 	)
 
 	defer func() {
-		_ = os.Remove(tarFilename)
+		_ = os.Remove(rosaTarFilePath)
 	}()
 
 	runtimeOS := runtime.GOOS
@@ -96,9 +96,9 @@ func cliCheck() (string, error) {
 	}
 	defer response.Body.Close()
 
-	tarFile, err := os.Create(tarFilename)
+	tarFile, err := os.Create(rosaTarFilePath)
 	if err != nil {
-		return "", fmt.Errorf("failed to create %s tar file: %v", tarFilename, err)
+		return "", fmt.Errorf("failed to create %s tar file: %v", rosaTarFilePath, err)
 	}
 	defer tarFile.Close()
 
@@ -116,18 +116,18 @@ func cliCheck() (string, error) {
 
 	_, err = io.Copy(tarFile, response.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to write content to %s: %v", tarFilename, err)
+		return "", fmt.Errorf("failed to write content to %s: %v", rosaTarFilePath, err)
 	}
 
-	tarFileReader, err := os.Open(tarFilename)
+	tarFileReader, err := os.Open(rosaTarFilePath)
 	if err != nil {
-		return "", fmt.Errorf("failed to open %s: %v", tarFilename, err)
+		return "", fmt.Errorf("failed to open %s: %v", rosaTarFilePath, err)
 	}
 	defer tarFileReader.Close()
 
 	gzipReader, err := gzip.NewReader(tarFileReader)
 	if err != nil {
-		return "", fmt.Errorf("failed to create gzip reader for %s: %v", tarFilename, err)
+		return "", fmt.Errorf("failed to create gzip reader for %s: %v", rosaTarFilePath, err)
 	}
 	defer gzipReader.Close()
 
