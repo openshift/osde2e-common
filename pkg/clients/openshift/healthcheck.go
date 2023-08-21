@@ -29,6 +29,9 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 		if apierrors.IsNotFound(err) {
 			if err = wait.For(func() (bool, error) {
 				if err = c.Get(ctx, jobName, osdClusterReadyNamespace, &job); err != nil {
+					if apierrors.IsNotFound(err) {
+						return false, nil
+					}
 					return false, err
 				}
 				return true, nil
