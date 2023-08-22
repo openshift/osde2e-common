@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 )
@@ -233,7 +234,7 @@ func (c *Client) getReplacesCSV(ctx context.Context, name, namespace, channel st
 	}
 
 	defer func() {
-		_ = c.Delete(ctx, job)
+		_ = c.Delete(ctx, job, resources.WithDeletePropagation("Background"))
 	}()
 
 	// TODO: this doesn't fail _when_ the job fails, it waits for it to be completed
