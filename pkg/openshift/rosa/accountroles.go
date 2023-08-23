@@ -15,6 +15,9 @@ type accountRoles struct {
 	installerRoleARN    string
 	supportRoleARN      string
 	workerRoleARN       string
+	hcpInstallerRoleARN string
+	hcpSupportRoleARN   string
+	hcpWorkerRoleARN    string
 }
 
 // accountRolesError represents the custom error
@@ -133,27 +136,45 @@ func (r *Provider) getAccountRoles(ctx context.Context, prefix, version string) 
 			continue
 		}
 
-		switch roleType {
-		case "Control plane":
-			roles.controlPlaneRoleARN = roleARN
-			accountRolesFound += 1
-		case "Installer":
-			roles.installerRoleARN = roleARN
-			accountRolesFound += 1
-		case "Support":
-			roles.supportRoleARN = roleARN
-			accountRolesFound += 1
-		case "Worker":
-			roles.workerRoleARN = roleARN
-			accountRolesFound += 1
+		if strings.HasPrefix(roleName, "HCP-ROSA") {
+			switch roleType {
+			case "Installer", "Support", "Worker":
+				accountRolesFound += 1
+				switch roleType {
+				case "Installer":
+					roles.hcpInstallerRoleARN = roleARN
+				case "Support":
+					roles.hcpSupportRoleARN = roleARN
+				case "Worker":
+					roles.hcpWorkerRoleARN = roleARN
+				}
+			default:
+				r.log.Info("Unknown role type", roleARN, roleType)
+			}
+		} else {
+			switch roleType {
+			case "Control plane", "Installer", "Support", "Worker":
+				accountRolesFound += 1
+				switch roleType {
+				case "Control plane":
+					roles.controlPlaneRoleARN = roleARN
+				case "Installer":
+					roles.installerRoleARN = roleARN
+				case "Support":
+					roles.supportRoleARN = roleARN
+				case "Worker":
+					roles.workerRoleARN = roleARN
+				}
+			default:
+				r.log.Info("Unknown role type", roleARN, roleType)
+			}
 		}
-
 	}
 
 	switch {
 	case accountRolesFound == 0:
 		return nil, nil
-	case accountRolesFound != 4:
+	case accountRolesFound != 7:
 		return nil, fmt.Errorf("one or more prefixed %q account roles does not exist: %+v", prefix, roles)
 	default:
 		return roles, nil
