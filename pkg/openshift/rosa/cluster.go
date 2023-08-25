@@ -114,7 +114,7 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		return "", &clusterError{action: action, err: err}
 	}
 
-	if options.STS {
+	if options.HostedCP || options.STS {
 		version, err := semver.NewVersion(options.Version)
 		if err != nil {
 			return "", &clusterError{action: action, err: fmt.Errorf("failed to parse version into semantic version: %v", err)}
@@ -131,9 +131,7 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 			return "", &clusterError{action: action, err: err}
 		}
 		options.accountRoles = *accountRoles
-	}
 
-	if options.HostedCP {
 		if options.OidcConfigID == "" {
 			options.OidcConfigID, err = r.createOIDCConfig(
 				ctx,
@@ -144,7 +142,9 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 				return "", &clusterError{action: action, err: err}
 			}
 		}
+	}
 
+	if options.HostedCP {
 		if options.SubnetIDs == "" {
 			vpc, err := r.createHostedControlPlaneVPC(
 				ctx,
@@ -354,6 +354,7 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		"--role-arn", options.accountRoles.installerRoleARN,
 		"--support-role-arn", options.accountRoles.supportRoleARN,
 		"--worker-iam-role", options.accountRoles.workerRoleARN,
+		"--oidc-config-id", options.OidcConfigID,
 		"--yes",
 	}
 
