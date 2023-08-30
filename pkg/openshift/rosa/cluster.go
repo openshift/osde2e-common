@@ -306,20 +306,22 @@ func (r *Provider) validateCreateClusterOptions(options *CreateClusterOptions) (
 		}
 	}
 
-	if options.accountRoles.controlPlaneRoleARN == "" {
-		errs = append(errs, errors.New("iam role arn for control plane is required"))
-	}
+	if options.HostedCP || options.STS {
+		if options.accountRoles.controlPlaneRoleARN == "" {
+			errs = append(errs, errors.New("iam role arn for control plane is required"))
+		}
 
-	if options.accountRoles.installerRoleARN == "" {
-		errs = append(errs, errors.New("iam role arn for installer is required"))
-	}
+		if options.accountRoles.installerRoleARN == "" {
+			errs = append(errs, errors.New("iam role arn for installer is required"))
+		}
 
-	if options.accountRoles.supportRoleARN == "" {
-		errs = append(errs, errors.New("iam role arn for support role is required"))
-	}
+		if options.accountRoles.supportRoleARN == "" {
+			errs = append(errs, errors.New("iam role arn for support role is required"))
+		}
 
-	if options.accountRoles.workerRoleARN == "" {
-		errs = append(errs, errors.New("iam role for worker role is required"))
+		if options.accountRoles.workerRoleARN == "" {
+			errs = append(errs, errors.New("iam role for worker role is required"))
+		}
 	}
 
 	if len(errs) != 0 {
@@ -342,7 +344,6 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 	commandArgs := []string{
 		"create", "cluster",
 		"--output", "json",
-		"--mode", "auto",
 		"--cluster-name", options.ClusterName,
 		"--channel-group", options.ChannelGroup,
 		"--compute-machine-type", options.ComputeMachineType,
@@ -370,6 +371,10 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		for key, value := range options.Properties {
 			commandArgs = append(commandArgs, "--properties", fmt.Sprintf("%s:%s", key, value))
 		}
+	}
+
+	if options.HostedCP || options.STS {
+		commandArgs = append(commandArgs, "--mode", "auto")
 	}
 
 	if options.HostedCP {
