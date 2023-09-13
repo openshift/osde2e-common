@@ -15,6 +15,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/openshift/osde2e-common/internal/cmd"
 	ocmclient "github.com/openshift/osde2e-common/pkg/clients/ocm"
 	awscloud "github.com/openshift/osde2e-common/pkg/clouds/aws"
@@ -90,7 +91,16 @@ func cliCheck() (string, error) {
 		return path, nil
 	}
 
-	response, err := http.Get(url)
+	retryClient := retryablehttp.NewClient()
+	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		ok, e := retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+		if !ok && resp.StatusCode == http.StatusRequestTimeout {
+			return true, nil
+		}
+		return ok, e
+	}
+
+	response, err := retryClient.Get(url)
 	if err != nil || response.StatusCode == http.StatusNotFound {
 		return "", fmt.Errorf("failed to download %s: %v", url, err)
 	}
