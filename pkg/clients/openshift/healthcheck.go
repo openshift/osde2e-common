@@ -43,18 +43,20 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 		}
 	}
 
-	c.log.Info("Wait for cluster job to finish", jobNameLoggerKey, jobName, timeoutLoggerKey, timeout)
+	c.log.Info("Waiting for cluster healthcheck job to finish", jobNameLoggerKey, jobName, timeoutLoggerKey, timeout.Round(time.Second).String())
 
 	err = wait.For(conditions.New(c.Resources).JobCompleted(&job), wait.WithTimeout(timeout))
 	if err != nil {
+		c.log.Error(err, "failed waiting for healthcheck job to finish")
 		logs, err := c.GetJobLogs(ctx, jobName, osdClusterReadyNamespace)
 		if err != nil {
 			return fmt.Errorf("unable to get job logs for %s/%s: %w", osdClusterReadyNamespace, jobName, err)
 		}
-		if err = os.WriteFile(fmt.Sprintf("%s/%s.log", reportDir, jobName), []byte(logs), os.FileMode(0o644)); err != nil {
+		jobLogsFile := fmt.Sprintf("%s/%s.log", reportDir, jobName)
+		if err = os.WriteFile(jobLogsFile, []byte(logs), os.FileMode(0o644)); err != nil {
 			return fmt.Errorf("failed to write job %s logs to file: %w", jobName, err)
 		}
-		return fmt.Errorf("%s failed to complete in desired time/health checks have failed: %w", jobName, err)
+		return fmt.Errorf("%s/%s failed to complete (check %s for more info): %w", osdClusterReadyNamespace, jobName, jobLogsFile, err)
 	}
 
 	c.log.Info("Cluster job finished successfully!", jobNameLoggerKey, jobName)
@@ -65,7 +67,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 // HCPClusterHealthy waits for the cluster to be in a health "ready" state
 // by confirming nodes are available
 func (c *Client) HCPClusterHealthy(ctx context.Context, computeNodes int, timeout time.Duration) error {
-	c.log.Info("Wait for hosted control plane cluster to healthy", timeoutLoggerKey, timeout)
+	c.log.Info("Waiting for hosted control plane cluster to healthy", timeoutLoggerKey, timeout.Round(time.Second).String())
 
 	err := wait.For(func() (bool, error) {
 		var nodes corev1.NodeList
