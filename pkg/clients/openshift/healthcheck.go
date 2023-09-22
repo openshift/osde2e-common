@@ -51,10 +51,11 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 		if err != nil {
 			return fmt.Errorf("unable to get job logs for %s/%s: %w", osdClusterReadyNamespace, jobName, err)
 		}
-		if err = os.WriteFile(fmt.Sprintf("%s/%s.log", reportDir, jobName), []byte(logs), os.FileMode(0o644)); err != nil {
+		jobLogsFile := fmt.Sprintf("%s/%s.log", reportDir, jobName)
+		if err = os.WriteFile(jobLogsFile, []byte(logs), os.FileMode(0o644)); err != nil {
 			return fmt.Errorf("failed to write job %s logs to file: %w", jobName, err)
 		}
-		return fmt.Errorf("%s failed to complete in desired time/health checks have failed: %w", jobName, err)
+		return fmt.Errorf("%s/%s failed to complete (check %s for more info): %w", osdClusterReadyNamespace, jobName, jobLogsFile, err)
 	}
 
 	c.log.Info("Cluster job finished successfully!", jobNameLoggerKey, jobName)
