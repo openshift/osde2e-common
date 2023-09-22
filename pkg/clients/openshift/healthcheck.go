@@ -47,6 +47,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 
 	err = wait.For(conditions.New(c.Resources).JobCompleted(&job), wait.WithTimeout(timeout))
 	if err != nil {
+		c.log.Error(err, "failed waiting for healthcheck job to finish")
 		logs, err := c.GetJobLogs(ctx, jobName, osdClusterReadyNamespace)
 		if err != nil {
 			return fmt.Errorf("unable to get job logs for %s/%s: %w", osdClusterReadyNamespace, jobName, err)
