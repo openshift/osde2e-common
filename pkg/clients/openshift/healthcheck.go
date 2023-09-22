@@ -43,7 +43,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 		}
 	}
 
-	c.log.Info("Wait for cluster job to finish", jobNameLoggerKey, jobName, timeoutLoggerKey, timeout)
+	c.log.Info("Waiting for cluster healthcheck job to finish", jobNameLoggerKey, jobName, timeoutLoggerKey, timeout.Round(time.Second).String())
 
 	err = wait.For(conditions.New(c.Resources).JobCompleted(&job), wait.WithTimeout(timeout))
 	if err != nil {
@@ -65,7 +65,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 // HCPClusterHealthy waits for the cluster to be in a health "ready" state
 // by confirming nodes are available
 func (c *Client) HCPClusterHealthy(ctx context.Context, computeNodes int, timeout time.Duration) error {
-	c.log.Info("Wait for hosted control plane cluster to healthy", timeoutLoggerKey, timeout)
+	c.log.Info("Waiting for hosted control plane cluster to healthy", timeoutLoggerKey, timeout.Round(time.Second).String())
 
 	err := wait.For(func() (bool, error) {
 		var nodes corev1.NodeList
