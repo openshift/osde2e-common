@@ -28,6 +28,10 @@ func NewFromKubeconfig(filename string, logger logr.Logger) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kubernetes config: %w", err)
 	}
+	return NewFromRestConfig(cfg, logger)
+}
+
+func NewFromRestConfig(cfg *rest.Config, logger logr.Logger) (*Client, error) {
 	client, err := resources.New(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to created dynamic client: %w", err)
