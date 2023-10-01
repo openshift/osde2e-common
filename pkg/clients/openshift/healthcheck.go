@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 )
 
 const (
@@ -22,31 +21,22 @@ const (
 // OSDClusterHealthy waits for the cluster to be in a healthy "ready" state
 // by confirming the osd-ready-job finishes successfully
 func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir string, timeout time.Duration) error {
-	var job batchv1.Job
-
-	err := c.Get(ctx, jobName, osdClusterReadyNamespace, &job)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			if err = wait.For(func() (bool, error) {
-				if err = c.Get(ctx, jobName, osdClusterReadyNamespace, &job); err != nil {
-					if apierrors.IsNotFound(err) {
-						return false, nil
-					}
-					return false, err
-				}
-				return true, nil
-			}, wait.WithTimeout(10*time.Minute)); err != nil {
-				return fmt.Errorf("job %s never found: %w", jobName, err)
+	if err := wait.For(func() (bool, error) {
+		job := new(batchv1.Job)
+		if err := c.Get(ctx, jobName, osdClusterReadyNamespace, job); err != nil {
+			c.log.Error(err, fmt.Sprintf("failed to get job %s/%s", osdClusterReadyNamespace, jobName))
+			if isRetryableAPIError(err) || apierrors.IsNotFound(err) {
+				return false, nil
 			}
-		} else {
-			return fmt.Errorf("failed to get existing %s job %w", jobName, err)
+			return false, err
 		}
-	}
-
-	c.log.Info("Waiting for cluster healthcheck job to finish", jobNameLoggerKey, jobName, timeoutLoggerKey, timeout.Round(time.Second).String())
-
-	err = wait.For(conditions.New(c.Resources).JobCompleted(&job), wait.WithTimeout(timeout))
-	if err != nil {
+		for _, cond := range job.Status.Conditions {
+			if cond.Type == batchv1.JobComplete && cond.Status == corev1.ConditionTrue {
+				return true, nil
+			}
+		}
+		return false, nil
+	}, wait.WithTimeout(timeout)); err != nil {
 		c.log.Error(err, "failed waiting for healthcheck job to finish")
 		logs, err := c.GetJobLogs(ctx, jobName, osdClusterReadyNamespace)
 		if err != nil {
