@@ -105,7 +105,7 @@ func (c *Client) UpgradeOperator(ctx context.Context, name, namespace string) er
 	}
 
 	// wait until there is no install plan matching the name
-	if err = wait.For(func() (bool, error) {
+	if err = wait.For(func(ctx context.Context) (bool, error) {
 		ips, err := installplans.List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return false, err
@@ -149,7 +149,7 @@ func (c *Client) UpgradeOperator(ctx context.Context, name, namespace string) er
 	}
 
 	// wait for the install to succeed and that it is upgraded to the originally installed version
-	if err = wait.For(func() (bool, error) {
+	if err = wait.For(func(ctx context.Context) (bool, error) {
 		newSub, err := subscriptions.Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return false, err

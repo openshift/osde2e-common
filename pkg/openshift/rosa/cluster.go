@@ -92,7 +92,7 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 	if options.ChannelGroup == "nightly" {
 		// TODO: validate version is as expected
 		r.log.Info("Waiting up to 5 minutes for nightly version to be available", "version", options.Version)
-		if err := wait.For(func() (bool, error) {
+		if err := wait.For(func(ctx context.Context) (bool, error) {
 			versions, err := r.Versions(ctx, options.ChannelGroup, options.HostedCP)
 			if err != nil {
 				return false, err
@@ -511,7 +511,7 @@ func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, c
 
 	r.log.Info("Waiting for cluster to be installed", clusterIDLoggerKey, clusterID, clusterNameLoggerKey, clusterName, timeoutLoggerKey, timeout.Round(time.Second).String(), ocmEnvironmentLoggerKey, r.ocmEnvironment)
 
-	err := wait.For(func() (bool, error) {
+	err := wait.For(func(ctx context.Context) (bool, error) {
 		clusterState, err := getClusterState()
 		if err != nil {
 			return false, err
@@ -552,7 +552,7 @@ func (r *Provider) waitForClusterToBeDeleted(ctx context.Context, clusterName, r
 		r.log.Error(err, "failed to get cluster uninstall log", clusterNameLoggerKey, clusterName, ocmEnvironmentLoggerKey, r.ocmEnvironment)
 	}()
 
-	err := wait.For(func() (bool, error) {
+	err := wait.For(func(ctx context.Context) (bool, error) {
 		cluster, err := r.findCluster(ctx, clusterName)
 		if err == nil && cluster != nil {
 			r.log.Info("Cluster is uninstalling...", clusterNameLoggerKey, clusterName, clusterStateLoggerKey, cluster.State(), ocmEnvironmentLoggerKey, r.ocmEnvironment)
