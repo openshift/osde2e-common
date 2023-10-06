@@ -21,7 +21,7 @@ const (
 // OSDClusterHealthy waits for the cluster to be in a healthy "ready" state
 // by confirming the osd-ready-job finishes successfully
 func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir string, timeout time.Duration) error {
-	if err := wait.For(func() (bool, error) {
+	if err := wait.For(func(ctx context.Context) (bool, error) {
 		job := new(batchv1.Job)
 		if err := c.Get(ctx, jobName, osdClusterReadyNamespace, job); err != nil {
 			c.log.Error(err, fmt.Sprintf("failed to get job %s/%s", osdClusterReadyNamespace, jobName))
@@ -59,7 +59,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 func (c *Client) HCPClusterHealthy(ctx context.Context, computeNodes int, timeout time.Duration) error {
 	c.log.Info("Waiting for hosted control plane cluster to healthy", timeoutLoggerKey, timeout.Round(time.Second).String())
 
-	err := wait.For(func() (bool, error) {
+	err := wait.For(func(ctx context.Context) (bool, error) {
 		var nodes corev1.NodeList
 		err := c.List(ctx, &nodes)
 		if err != nil {
