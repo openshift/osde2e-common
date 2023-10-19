@@ -11,7 +11,7 @@ func isRetryableAPIError(err error) bool {
 	// These errors may indicate a transient error that we can retry in tests.
 	if apierrors.IsInternalError(err) || apierrors.IsTimeout(err) || apierrors.IsServerTimeout(err) ||
 		apierrors.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) ||
-		utilnet.IsConnectionRefused(err) {
+		utilnet.IsConnectionRefused(err) || utilnet.IsHTTP2ConnectionLost(err) {
 		return true
 	}
 
