@@ -23,7 +23,7 @@ import (
 
 const (
 	downloadURL    = "https://mirror.openshift.com/pub/openshift-v4/clients/rosa"
-	minimumVersion = "1.2.27"
+	minimumVersion = "1.2.29"
 )
 
 // Provider is a rosa provider
