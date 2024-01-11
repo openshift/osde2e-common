@@ -22,8 +22,7 @@ import (
 )
 
 const (
-	downloadURL    = "https://mirror.openshift.com/pub/openshift-v4/clients/rosa"
-	minimumVersion = "1.2.30"
+	downloadURL = "https://mirror.openshift.com/pub/openshift-v4/clients/rosa"
 )
 
 // Provider is a rosa provider
@@ -64,10 +63,10 @@ func (r *Provider) Uninstall(ctx context.Context) error {
 	return nil
 }
 
-// cliExist checks if rosa cli is available else it will download it
+// cliCheck checks if rosa cli is available else it will download it
 func cliCheck() (string, error) {
 	var (
-		url             = fmt.Sprintf("%s/%s", downloadURL, minimumVersion)
+		url             = fmt.Sprintf("%s/latest", downloadURL)
 		rosaFilename    = fmt.Sprintf("%s/rosa", os.TempDir())
 		rosaTarFilePath = fmt.Sprintf("%s/rosa.tar.gz", os.TempDir())
 	)
@@ -161,8 +160,8 @@ func cliCheck() (string, error) {
 	return rosaFilename, nil
 }
 
-// versionCheck verifies the rosa cli version meets the minimal version required
-func versionCheck(ctx context.Context, rosaBinary string) (string, error) {
+// getVersion gets the rosa cli version
+func getVersion(ctx context.Context, rosaBinary string) (string, error) {
 	stdout, _, err := cmd.Run(exec.CommandContext(ctx, rosaBinary, "version"))
 	if err != nil {
 		return "", err
@@ -170,21 +169,12 @@ func versionCheck(ctx context.Context, rosaBinary string) (string, error) {
 
 	versionSlice := strings.SplitAfter(fmt.Sprint(stdout), "\n")
 	if len(versionSlice) == 0 {
-		return "", fmt.Errorf("versionCheck failed to get version from cli standard out")
+		return "", errors.New("getVersion failed to get version from cli standard out")
 	}
 
 	currentVersion, err := semver.NewVersion(strings.ReplaceAll(versionSlice[0], "\n", ""))
 	if err != nil {
-		return "", fmt.Errorf("versionCheck failed to parse version to semantic version: %v", err)
-	}
-
-	minVersion, err := semver.NewVersion(minimumVersion)
-	if err != nil {
-		return "", fmt.Errorf("versionCheck failed to parse minimum version to semantic version: %v", err)
-	}
-
-	if minVersion.Compare(currentVersion) == 1 {
-		return "", fmt.Errorf("current rosa version is %q and must be >= %q", currentVersion.String(), minVersion)
+		return "", fmt.Errorf("getVersion failed to parse version to semantic version: %v", err)
 	}
 
 	return currentVersion.String(), nil
@@ -222,7 +212,7 @@ func New(ctx context.Context, token string, ocmEnvironment ocmclient.Environment
 		return nil, &providerError{err: err}
 	}
 
-	version, err := versionCheck(ctx, rosaBinary)
+	version, err := getVersion(ctx, rosaBinary)
 	if err != nil {
 		return nil, &providerError{err: err}
 	}
