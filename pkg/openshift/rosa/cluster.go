@@ -351,12 +351,17 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		"--region", r.awsCredentials.Region,
 		"--version", options.Version,
 		"--host-prefix", fmt.Sprint(options.HostPrefix),
-		"--controlplane-iam-role", options.accountRoles.controlPlaneRoleARN,
-		"--role-arn", options.accountRoles.installerRoleARN,
-		"--support-role-arn", options.accountRoles.supportRoleARN,
-		"--worker-iam-role", options.accountRoles.workerRoleARN,
 		"--oidc-config-id", options.OidcConfigID,
 		"--yes",
+	}
+
+	if !options.HostedCP {
+		commandArgs = append(commandArgs, []string{
+			"--role-arn", options.accountRoles.installerRoleARN,
+			"--controlplane-iam-role", options.accountRoles.controlPlaneRoleARN,
+			"--support-role-arn", options.accountRoles.supportRoleARN,
+			"--worker-iam-role", options.accountRoles.workerRoleARN,
+		}...)
 	}
 
 	if options.PodCIDR != "" {
@@ -380,6 +385,11 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 	if options.HostedCP {
 		commandArgs = append(commandArgs, "--hosted-cp")
 		commandArgs = append(commandArgs, "--oidc-config-id", options.OidcConfigID)
+		commandArgs = append(commandArgs, []string{
+			"--role-arn", options.accountRoles.hcpInstallerRoleARN,
+			"--support-role-arn", options.accountRoles.hcpSupportRoleARN,
+			"--worker-iam-role", options.accountRoles.hcpWorkerRoleARN,
+		}...)
 	}
 
 	if options.SubnetIDs != "" {
