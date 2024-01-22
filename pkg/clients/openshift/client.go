@@ -99,14 +99,24 @@ func (c *Client) GetJobLogs(ctx context.Context, name, namespace string) (string
 // If the watched job fails, is disconnected, the watch produces an error, the
 // watch channel closes, or the context is cancelled at timeout, it will return
 // an error containing event in question.
-func (c *Client) WatchJob(ctx context.Context, namespace string, job batchv1.Job) error {
+func (c *Client) WatchJob(ctx context.Context, namespace string, name string) error {
+	job := new(batchv1.Job)
+	if err := c.Get(ctx, name, namespace, job); err != nil {
+		return fmt.Errorf("failed to find job %s/%s: %w", namespace, name, err)
+	}
+
+	for _, cond := range job.Status.Conditions {
+		if cond.Type == batchv1.JobComplete && cond.Status == corev1.ConditionTrue {
+			return nil
+		}
+	}
+
 	clientSet, err := kubernetes.NewForConfig(c.GetConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create kubernetes clientset: %w", err)
 	}
 	watcher, err := clientSet.BatchV1().Jobs(namespace).Watch(ctx, metav1.ListOptions{
-		ResourceVersion: job.ResourceVersion,
-		FieldSelector:   "metadata.name=" + job.Name,
+		FieldSelector: "metadata.name=" + job.Name,
 	})
 	if err != nil {
 		return fmt.Errorf("failed creating job watcher: %w", err)
@@ -115,7 +125,7 @@ func (c *Client) WatchJob(ctx context.Context, namespace string, job batchv1.Job
 	for {
 		select {
 		case event, more := <-watcher.ResultChan():
-			c.log.Info("Watching job %s: %s", job.Name, event.Type)
+			c.log.Info("Watching job", job.Name, event.Type)
 			switch event.Type {
 			case watch.Added:
 				fallthrough
