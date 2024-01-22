@@ -6,8 +6,11 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/openshift/api"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/e2e-framework/klient/conf"
@@ -90,4 +93,50 @@ func (c *Client) GetJobLogs(ctx context.Context, name, namespace string) (string
 	}
 	// TODO: there may be a case where the first item isn't correct
 	return c.GetPodLogs(ctx, pods.Items[0].GetName(), namespace)
+}
+
+// WatchJob function streams job events and returns nil on success.
+// If the watched job fails, is disconnected, the watch produces an error, the
+// watch channel closes, or the context is cancelled at timeout, it will return
+// an error containing event in question.
+func (c *Client) WatchJob(ctx context.Context, namespace string, job batchv1.Job) error {
+	clientSet, err := kubernetes.NewForConfig(c.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create kubernetes clientset: %w", err)
+	}
+	watcher, err := clientSet.BatchV1().Jobs(namespace).Watch(ctx, metav1.ListOptions{
+		ResourceVersion: job.ResourceVersion,
+		FieldSelector:   "metadata.name=" + job.Name,
+	})
+	if err != nil {
+		return fmt.Errorf("failed creating job watcher: %w", err)
+	}
+	defer watcher.Stop()
+	for {
+		select {
+		case event, more := <-watcher.ResultChan():
+			c.log.Info("Watching job %s: %s", job.Name, event.Type)
+			switch event.Type {
+			case watch.Added:
+				fallthrough
+			case watch.Modified:
+				job := event.Object.(*batchv1.Job)
+				if job.Status.Succeeded > 0 {
+					return nil
+				}
+				if job.Status.Failed > 0 {
+					return fmt.Errorf("job failed")
+				}
+			case watch.Deleted:
+				return fmt.Errorf("job deleted before becoming ready")
+			case watch.Error:
+				return fmt.Errorf("watch returned error event: %v", event)
+			}
+			if !more {
+				return fmt.Errorf("job watch result channel closed prematurely with event: %T %v", event, event)
+			}
+		case <-ctx.Done():
+			return fmt.Errorf("job watch context cancelled while still waiting for success")
+		}
+	}
 }
