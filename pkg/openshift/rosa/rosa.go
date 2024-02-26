@@ -13,7 +13,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/openshift/osde2e-common/internal/cmd"
@@ -172,12 +171,7 @@ func getVersion(ctx context.Context, rosaBinary string) (string, error) {
 		return "", errors.New("getVersion failed to get version from cli standard out")
 	}
 
-	currentVersion, err := semver.NewVersion(strings.ReplaceAll(versionSlice[0], "\n", ""))
-	if err != nil {
-		return "", fmt.Errorf("getVersion failed to parse version to semantic version: %v", err)
-	}
-
-	return currentVersion.String(), nil
+	return strings.ReplaceAll(versionSlice[0], "\n", ""), nil
 }
 
 // verifyLogin validates the authentication details provided are valid by logging in with rosa cli
