@@ -117,7 +117,7 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 	if options.HostedCP || options.STS {
 		version, err := semver.NewVersion(options.Version)
 		if err != nil {
-			return "", &clusterError{action: action, err: fmt.Errorf("failed to parse version into semantic version: %v", err)}
+			return "", &clusterError{action: action, err: fmt.Errorf("failed to parse version (%q) into semantic version: %v", options.Version, err)}
 		}
 		majorMinor := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
 
@@ -433,7 +433,7 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 	}
 
 	if options.ExpirationDuration > 0 {
-		commandArgs = append(commandArgs, "--expiration-time", time.Now().Add(options.ExpirationDuration*time.Minute).UTC().Format(time.RFC3339))
+		commandArgs = append(commandArgs, "--expiration-time", time.Now().Add(options.ExpirationDuration).UTC().Format(time.RFC3339))
 	}
 
 	r.log.Info("Initiating cluster creation", clusterNameLoggerKey, options.ClusterName, ocmEnvironmentLoggerKey, r.ocmEnvironment)
