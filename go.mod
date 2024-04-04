@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/go-logr/logr v1.2.4
+	github.com/go-logr/logr v1.4.1
 	github.com/hashicorp/go-retryablehttp v0.7.4
 	github.com/hashicorp/hc-install v0.5.2
 	github.com/hashicorp/terraform-exec v0.18.1
@@ -17,7 +17,6 @@ require (
 	k8s.io/api v0.28.2
 	k8s.io/apimachinery v0.28.2
 	k8s.io/client-go v0.28.2
-	k8s.io/klog/v2 v2.100.1
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 	sigs.k8s.io/e2e-framework v0.3.0
 )
@@ -79,6 +78,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	sigs.k8s.io/controller-runtime v0.15.1 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
