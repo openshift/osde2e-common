@@ -7,7 +7,7 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/hashicorp/go-retryablehttp v0.7.6
 	github.com/hashicorp/hc-install v0.7.0
-	github.com/hashicorp/terraform-exec v0.20.0
+	github.com/hashicorp/terraform-exec v0.21.0
 	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.7
 	github.com/openshift-online/ocm-sdk-go v0.1.420
@@ -48,7 +48,7 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
-	github.com/hashicorp/terraform-json v0.19.0 // indirect
+	github.com/hashicorp/terraform-json v0.22.1 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -64,7 +64,7 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/zclconf/go-cty v1.14.1 // indirect
+	github.com/zclconf/go-cty v1.14.4 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
