@@ -428,7 +428,7 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		}
 
 		if options.AdditionalTrustBundleFile != "" {
-			commandArgs = append(commandArgs, "----additional-trust-bundle-file", options.AdditionalTrustBundleFile)
+			commandArgs = append(commandArgs, "--additional-trust-bundle-file", options.AdditionalTrustBundleFile)
 		}
 	}
 
