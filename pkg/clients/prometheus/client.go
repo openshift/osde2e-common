@@ -39,6 +39,10 @@ func New(ctx context.Context, client *openshift.Client) (*Client, error) {
 	return &Client{prometheus: prometheus}, nil
 }
 
+func (c *Client) GetClient() prometheusv1.API {
+	return c.prometheus
+}
+
 func (c *Client) InstantQuery(ctx context.Context, query string) (model.Vector, error) {
 	result, warnings, err := c.prometheus.Query(ctx, query, time.Now())
 	if err != nil {
