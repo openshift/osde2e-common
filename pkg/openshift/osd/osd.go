@@ -28,12 +28,12 @@ func (o *providerError) Error() string {
 // New handles constructing the osd provider which creates a connection
 // to openshift cluster manager "ocm". It is the callers responsibility
 // to close the ocm connection when they are finished (defer provider.Connection.Close())
-func New(ctx context.Context, token string, ocmEnvironment ocmclient.Environment, logger logr.Logger) (*Provider, error) {
+func New(ctx context.Context, token string, clientID string, clientSecret string, ocmEnvironment ocmclient.Environment, logger logr.Logger) (*Provider, error) {
 	if ocmEnvironment == "" || token == "" {
 		return nil, &providerError{err: fmt.Errorf("some parameters are undefined, unable to construct osd provider")}
 	}
 
-	ocmClient, err := ocmclient.New(ctx, token, ocmEnvironment)
+	ocmClient, err := ocmclient.New(ctx, token, clientID, clientSecret, ocmEnvironment)
 	if err != nil {
 		return nil, &providerError{err: err}
 	}

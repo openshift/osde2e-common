@@ -175,29 +175,45 @@ func getVersion(ctx context.Context, rosaBinary string) (string, error) {
 }
 
 // verifyLogin validates the authentication details provided are valid by logging in with rosa cli
-func verifyLogin(ctx context.Context, rosaBinary string, token string, ocmEnvironment ocmclient.Environment, awsCredentials *awscloud.AWSCredentials) error {
-	commandArgs := []string{
-		"login",
-		"--token", token,
-		"--env", string(ocmEnvironment),
-	}
+func verifyLogin(ctx context.Context, rosaBinary string, token string, clientID string, clientSecret string, httpsProxy string, ocmEnvironment ocmclient.Environment, awsCredentials *awscloud.AWSCredentials) error {
+	commandArgs := []string{"login"}
 
 	command := exec.CommandContext(ctx, rosaBinary, commandArgs...)
 	command.Env = append(command.Environ(), awsCredentials.CredentialsAsList()...)
-	command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
 
-	_, _, err := cmd.Run(command)
-	if err != nil {
-		return fmt.Errorf("login failed %v", err)
+	if clientID != "" && clientSecret != "" {
+		command.Args = append(command.Args, "--client-id", clientID)
+		command.Args = append(command.Args, "--client-secret", clientSecret)
+		command.Args = append(command.Args, "--govcloud")
+		// TODO: Work around. The rosa cli for govcloud does not support the --env passing the api endpoint.
+		// The environment selection can be handled with a data structure that maps the environment to the api endpoint.
+		if ocmEnvironment == "https://api.int.openshiftusgov.com" {
+			ocmEnvironment = "integration"
+		}
+		command.Env = append(command.Env, fmt.Sprintf("HTTPS_PROXY=%s", httpsProxy))
+	} else {
+		command.Args = append(command.Args, "--token", token)
+		command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
 	}
+	command.Args = append(command.Args, "--env", string(ocmEnvironment))
+	command.Args = append(command.Args, "--region", string(awsCredentials.Region))
+
+	fmt.Printf("Running command: %s \n", command)
+	_, stderr, err := cmd.Run(command)
+	if err != nil {
+		return fmt.Errorf("login failed %v, rosa output %v", err, stderr)
+	}
+	// TODO: Remove this print statement here for debugging.
+	fmt.Printf("Login successful\n")
+
 	return nil
 }
 
 // New handles constructing the rosa provider which creates a connection
 // to openshift cluster manager "ocm". It is the callers responsibility
 // to close the ocm connection when they are finished (defer provider.Connection.Close())
-func New(ctx context.Context, token string, ocmEnvironment ocmclient.Environment, logger logr.Logger, args ...*awscloud.AWSCredentials) (*Provider, error) {
-	if ocmEnvironment == "" || token == "" {
+func New(ctx context.Context, token string, clientID string, clientSecret string, httpsProxy string, ocmEnvironment ocmclient.Environment, logger logr.Logger, args ...*awscloud.AWSCredentials) (*Provider, error) {
+	if ocmEnvironment == "" || (token == "" && (clientID == "" || clientSecret == "")) {
 		return nil, &providerError{err: errors.New("some parameters are undefined, unable to construct osd provider")}
 	}
 
@@ -223,7 +239,7 @@ func New(ctx context.Context, token string, ocmEnvironment ocmclient.Environment
 		return nil, &providerError{err: fmt.Errorf("aws credential set and validation failed: %v", err)}
 	}
 
-	err = verifyLogin(ctx, rosaBinary, token, ocmEnvironment, awsCredentials)
+	err = verifyLogin(ctx, rosaBinary, token, clientID, clientSecret, httpsProxy, ocmEnvironment, awsCredentials)
 	if err != nil {
 		return nil, &providerError{err: err}
 	}
@@ -247,7 +263,7 @@ func New(ctx context.Context, token string, ocmEnvironment ocmclient.Environment
 
 	provider.AWSRegion = awsCredentials.Region
 
-	provider.Client, err = ocmclient.New(ctx, token, ocmEnvironment)
+	provider.Client, err = ocmclient.New(ctx, token, clientID, clientSecret, ocmEnvironment)
 	if err != nil {
 		return nil, &providerError{err: err}
 	}
