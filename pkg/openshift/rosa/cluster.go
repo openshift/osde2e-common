@@ -24,6 +24,7 @@ type CreateClusterOptions struct {
 	HostedCP                     bool
 	MultiAZ                      bool
 	STS                          bool
+	MintMode                     bool
 	SkipHealthCheck              bool
 	UseDefaultAccountRolesPrefix bool
 
@@ -68,6 +69,7 @@ type DeleteClusterOptions struct {
 	DeleteOidcConfigID bool
 	HostedCP           bool
 	STS                bool
+	MintMode           bool
 
 	UninstallTimeout time.Duration
 }
@@ -207,8 +209,6 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		return &clusterError{action: action, err: fmt.Errorf("failed to locate cluster in ocm environment: %s: %s", r.ocmEnvironment, err)}
 	}
 
-	operatorRolePrefix := cluster.AWS().STS().OperatorRolePrefix()
-
 	if options.HostedCP {
 		options.oidcConfigID = cluster.AWS().STS().OidcConfig().ID()
 	}
@@ -224,6 +224,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 	}
 
 	if options.STS {
+		operatorRolePrefix := cluster.AWS().STS().OperatorRolePrefix()
 		err = r.deleteOperatorRoles(ctx, cluster.ID(), operatorRolePrefix, options.oidcConfigID)
 		if err != nil {
 			return &clusterError{action: action, err: err}
@@ -398,6 +399,10 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 
 	if options.STS {
 		commandArgs = append(commandArgs, "--sts")
+	}
+
+	if options.MintMode {
+		commandArgs = append(commandArgs, "--mint-mode")
 	}
 
 	if options.FIPS {
