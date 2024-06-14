@@ -16,7 +16,7 @@ const (
 	FedRampProduction  Environment = "https://api.openshiftusgov.com"
 	FedRampStage       Environment = "https://api.stage.openshiftusgov.com"
 	FedRampIntegration Environment = "https://api.int.openshiftusgov.com"
-	fedrampTokenURL         string      = "https://sso.int.openshiftusgov.com/realms/redhat-external/protocol/openid-connect/token"
+	fedrampTokenURL    string      = "https://sso.int.openshiftusgov.com/realms/redhat-external/protocol/openid-connect/token"
 )
 
 type Client struct {
@@ -27,13 +27,13 @@ func New(ctx context.Context,
 	token string,
 	clientID string,
 	clientSecret string,
-	environment Environment) (*Client, error) {
-
+	environment Environment,
+) (*Client, error) {
 	connectionBuilder := ocmsdk.NewConnectionBuilder().URL(string(environment))
 
 	if clientID != "" && clientSecret != "" {
 		connectionBuilder.Client(clientID, clientSecret).
-			TokenURL(FRTokenURL)
+			TokenURL(fedrampTokenURL)
 	} else {
 		connectionBuilder.Tokens(token)
 	}
