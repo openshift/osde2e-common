@@ -16,7 +16,7 @@ const (
 	FedRampProduction  Environment = "https://api.openshiftusgov.com"
 	FedRampStage       Environment = "https://api.stage.openshiftusgov.com"
 	FedRampIntegration Environment = "https://api.int.openshiftusgov.com"
-	FRTokenURL         string      = "https://sso.int.openshiftusgov.com/realms/redhat-external/protocol/openid-connect/token"
+	fedrampTokenURL         string      = "https://sso.int.openshiftusgov.com/realms/redhat-external/protocol/openid-connect/token"
 )
 
 type Client struct {
