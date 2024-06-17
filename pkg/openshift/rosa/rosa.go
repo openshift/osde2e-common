@@ -199,7 +199,7 @@ func verifyLogin(ctx context.Context, rosaBinary string, token string, clientID 
 
 	_, stderr, err := cmd.Run(command)
 	if err != nil {
-		return fmt.Errorf("login failed %v, rosa output %v", err, stderr)
+		return fmt.Errorf("login failed with %q: %w", stderr, err)
 	}
 
 	return nil
