@@ -202,6 +202,11 @@ func verifyLogin(ctx context.Context, rosaBinary string, token string, clientID 
 		return fmt.Errorf("login failed with %q: %w", stderr, err)
 	}
 
+	_, stderr, err = cmd.Run(exec.CommandContext(ctx, rosaBinary, "whoami"))
+	if err != nil {
+		return fmt.Errorf("whoami failed with %q: %w", stderr, err)
+	}
+
 	return nil
 }
 
@@ -209,7 +214,7 @@ func verifyLogin(ctx context.Context, rosaBinary string, token string, clientID 
 // to openshift cluster manager "ocm". It is the callers responsibility
 // to close the ocm connection when they are finished (defer provider.Connection.Close())
 func New(ctx context.Context, token string, clientID string, clientSecret string, ocmEnvironment ocmclient.Environment, logger logr.Logger, args ...*awscloud.AWSCredentials) (*Provider, error) {
-	if ocmEnvironment == "" || (token == "" || (clientID == "" && clientSecret == "")) {
+	if ocmEnvironment == "" || (token == "" && (clientID == "" || clientSecret == "")) {
 		return nil, &providerError{err: errors.New("some parameters are undefined, unable to construct osd provider")}
 	}
 
