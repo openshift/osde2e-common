@@ -26,6 +26,8 @@ func main() {
 	provider, err := rosa.New(
 		ctx,
 		os.Getenv("OCM_TOKEN"),
+		os.Getenv("OCM_CLIENT_ID"),
+		os.Getenv("OCM_CLIENT_SECRET"),
 		ocmclient.Stage,
 		logger,
 		&awscloud.AWSCredentials{Profile: "", Region: ""},
