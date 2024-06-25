@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-exec v0.21.0
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
-	github.com/openshift-online/ocm-sdk-go v0.1.425
+	github.com/openshift-online/ocm-sdk-go v0.1.427
 	github.com/openshift/api v0.0.0-20240522145529-93d6bda14341
 	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250
 	github.com/openshift/library-go v0.0.0-20240517135010-e93e442c2b18
