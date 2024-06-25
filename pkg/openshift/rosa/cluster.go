@@ -12,6 +12,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	clustersmgmtv1 "github.com/openshift-online/ocm-sdk-go/clustersmgmt/v1"
 	"github.com/openshift/osde2e-common/internal/cmd"
+	"github.com/openshift/osde2e-common/pkg/clients/ocm"
 	openshiftclient "github.com/openshift/osde2e-common/pkg/clients/openshift"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 )
@@ -437,7 +438,8 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		}
 	}
 
-	if options.ExpirationDuration > 0 {
+	// add expiration if provided, expiration can not be modified on prod, skip
+	if options.ExpirationDuration > 0 && r.ocmEnvironment != ocm.Production {
 		commandArgs = append(commandArgs, "--expiration-time", time.Now().Add(options.ExpirationDuration).UTC().Format(time.RFC3339))
 	}
 
