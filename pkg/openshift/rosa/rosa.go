@@ -202,11 +202,6 @@ func verifyLogin(ctx context.Context, rosaBinary string, token string, clientID 
 		return fmt.Errorf("login failed with %q: %w", stderr, err)
 	}
 
-	_, stderr, err = cmd.Run(exec.CommandContext(ctx, rosaBinary, "whoami"))
-	if err != nil {
-		return fmt.Errorf("whoami failed with %q: %w", stderr, err)
-	}
-
 	return nil
 }
 
