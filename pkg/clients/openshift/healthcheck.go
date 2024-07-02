@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	osdClusterReadyName      = "osd-cluster-ready"
 	osdClusterReadyNamespace = "openshift-monitoring"
 	jobNameLoggerKey         = "job_name"
 	timeoutLoggerKey         = "timeout"
@@ -20,11 +21,11 @@ const (
 
 // OSDClusterHealthy waits for the cluster to be in a healthy "ready" state
 // by confirming the osd-ready-job finishes successfully
-func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir string, timeout time.Duration) error {
+func (c *Client) OSDClusterHealthy(ctx context.Context, reportDir string, timeout time.Duration) error {
 	if err := wait.For(func(ctx context.Context) (bool, error) {
 		job := new(batchv1.Job)
-		if err := c.Get(ctx, jobName, osdClusterReadyNamespace, job); err != nil {
-			c.log.Error(err, fmt.Sprintf("failed to get job %s/%s", osdClusterReadyNamespace, jobName))
+		if err := c.Get(ctx, osdClusterReadyName, osdClusterReadyNamespace, job); err != nil {
+			c.log.Error(err, fmt.Sprintf("failed to get job %s/%s", osdClusterReadyNamespace, osdClusterReadyName))
 			if isRetryableAPIError(err) || apierrors.IsNotFound(err) {
 				return false, nil
 			}
@@ -38,18 +39,18 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, jobName, reportDir strin
 		return false, nil
 	}, wait.WithTimeout(timeout)); err != nil {
 		c.log.Error(err, "failed waiting for healthcheck job to finish")
-		logs, err := c.GetJobLogs(ctx, jobName, osdClusterReadyNamespace)
+		logs, err := c.GetJobLogs(ctx, osdClusterReadyName, osdClusterReadyNamespace)
 		if err != nil {
-			return fmt.Errorf("unable to get job logs for %s/%s: %w", osdClusterReadyNamespace, jobName, err)
+			return fmt.Errorf("unable to get job logs for %s/%s: %w", osdClusterReadyNamespace, osdClusterReadyName, err)
 		}
-		jobLogsFile := fmt.Sprintf("%s/%s.log", reportDir, jobName)
+		jobLogsFile := fmt.Sprintf("%s/%s.log", reportDir, osdClusterReadyName)
 		if err = os.WriteFile(jobLogsFile, []byte(logs), os.FileMode(0o644)); err != nil {
-			return fmt.Errorf("failed to write job %s logs to file: %w", jobName, err)
+			return fmt.Errorf("failed to write job %s logs to file: %w", osdClusterReadyName, err)
 		}
-		return fmt.Errorf("%s/%s failed to complete (check %s for more info): %w", osdClusterReadyNamespace, jobName, jobLogsFile, err)
+		return fmt.Errorf("%s/%s failed to complete (check %s for more info): %w", osdClusterReadyNamespace, osdClusterReadyName, jobLogsFile, err)
 	}
 
-	c.log.Info("Cluster job finished successfully!", jobNameLoggerKey, jobName)
+	c.log.Info("Cluster job finished successfully!", jobNameLoggerKey, osdClusterReadyName)
 
 	return nil
 }
