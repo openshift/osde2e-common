@@ -162,8 +162,8 @@ github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f h1:y5//uYreIhSUg3J
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
 github.com/onsi/ginkgo/v2 v2.19.0 h1:9Cnnf7UHo57Hy3k6/m5k3dRfGTMXGvxhHFvkDTCTpvA=
 github.com/onsi/ginkgo/v2 v2.19.0/go.mod h1:rlwLi9PilAFJ8jCg9UE1QP6VBpd6/xj3SRC0d6TU0To=
-github.com/onsi/gomega v1.33.1 h1:dsYjIxxSR755MDmKVsaFQTE22ChNBcuuTWgkUDSubOk=
-github.com/onsi/gomega v1.33.1/go.mod h1:U4R44UsT+9eLIaYRB2a5qajjtQYn0hauxvRm16AVYg0=
+github.com/onsi/gomega v1.34.0 h1:eSSPsPNp6ZpsG8X1OVmOTxig+CblTc4AxpPBykhe2Os=
+github.com/onsi/gomega v1.34.0/go.mod h1:MIKI8c+f+QLWk+hxbePD4i0LMJSExPaZOVfkoex4cAo=
 github.com/openshift-online/ocm-sdk-go v0.1.432 h1:XIlCJKxXXznMP5Usu9lVGZa+UTYVlZ/ZKwqTvtNKhw8=
 github.com/openshift-online/ocm-sdk-go v0.1.432/go.mod h1:CiAu2jwl3ITKOxkeV0Qnhzv4gs35AmpIzVABQLtcI2Y=
 github.com/openshift/api v0.0.0-20240522145529-93d6bda14341 h1:JQpzgk+p24rkgNbNsrNR0yLm63WTKapuT60INU5BqT8=
