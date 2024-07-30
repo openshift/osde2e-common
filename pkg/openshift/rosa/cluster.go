@@ -28,9 +28,13 @@ type CreateClusterOptions struct {
 	MintMode                     bool
 	SkipHealthCheck              bool
 	UseDefaultAccountRolesPrefix bool
+	EnableAutoscaling            bool
+	ETCDEncryption               bool
 
-	HostPrefix int
-	Replicas   int
+	HostPrefix  int
+	Replicas    int
+	MinReplicas int
+	MaxReplicas int
 
 	ArtifactDir               string
 	AdditionalTrustBundleFile string
@@ -422,7 +426,25 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		}
 	}
 
-	commandArgs = append(commandArgs, "--replicas", fmt.Sprint(options.Replicas))
+	if options.EnableAutoscaling {
+		commandArgs = append(commandArgs, "--enable-autoscaling")
+	}
+
+	if options.ETCDEncryption {
+		commandArgs = append(commandArgs, "--etcd-encryption")
+	}
+
+	if options.MinReplicas > 0 {
+		commandArgs = append(commandArgs, "--min-replicas", fmt.Sprint(options.MinReplicas))
+	}
+
+	if options.MaxReplicas > 0 {
+		commandArgs = append(commandArgs, "--max-replicas", fmt.Sprint(options.MaxReplicas))
+	}
+
+	if options.MinReplicas == 0 && options.MaxReplicas == 0 {
+		commandArgs = append(commandArgs, "--replicas", fmt.Sprint(options.Replicas))
+	}
 
 	if options.SubnetIDs != "" {
 		if options.HTTPProxy != "" {
