@@ -26,6 +26,7 @@ type CreateClusterOptions struct {
 	MultiAZ                      bool
 	STS                          bool
 	MintMode                     bool
+	PrivateLink                  bool
 	SkipHealthCheck              bool
 	UseDefaultAccountRolesPrefix bool
 	EnableAutoscaling            bool
@@ -75,6 +76,7 @@ type DeleteClusterOptions struct {
 	HostedCP           bool
 	STS                bool
 	MintMode           bool
+	PrivateLink        bool
 
 	UninstallTimeout time.Duration
 }
@@ -151,13 +153,15 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		}
 	}
 
-	if options.HostedCP {
+	if options.HostedCP || options.PrivateLink {
 		if options.SubnetIDs == "" {
-			vpc, err := r.createHostedControlPlaneVPC(
+			vpc, err := r.createVPC(
 				ctx,
 				options.ClusterName,
 				r.awsCredentials.Region,
 				options.WorkingDir,
+				options.HostedCP,
+				options.PrivateLink,
 			)
 			if err != nil {
 				return "", &clusterError{action: action, err: err}
@@ -250,7 +254,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		}
 
 		if options.DeleteHostedCPVPC {
-			err = r.deleteHostedControlPlaneVPC(
+			err = r.deleteVPC(
 				ctx,
 				cluster.Name(),
 				r.awsCredentials.Region,
@@ -408,6 +412,11 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 
 	if options.MintMode {
 		commandArgs = append(commandArgs, "--mint-mode")
+	}
+
+	if options.PrivateLink {
+		commandArgs = append(commandArgs, "--private-link")
+		commandArgs = append(commandArgs, "--machine-cidr=10.0.0.0/16")
 	}
 
 	if options.FIPS {

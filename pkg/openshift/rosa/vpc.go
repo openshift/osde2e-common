@@ -20,15 +20,15 @@ type vpc struct {
 	nodePrivateSubnet string
 }
 
-// hpcVPCError represents the custom error
-type hcpVPCError struct {
+// vpcError represents the custom error
+type vpcError struct {
 	action string
 	err    error
 }
 
-// Error returns the formatted error message when hpcVPCError is invoked
-func (h *hcpVPCError) Error() string {
-	return fmt.Sprintf("%s hcp cluster vpc failed: %v", h.action, h.err)
+// Error returns the formatted error message when vpcError is invoked
+func (h *vpcError) Error() string {
+	return fmt.Sprintf("%s vpc failed: %v", h.action, h.err)
 }
 
 // copyFile copies the srcFile provided to the destFile
@@ -53,22 +53,23 @@ func copyFile(srcFile, destFile string) error {
 	return nil
 }
 
-// createHostedControlPlaneVPC creates the aws vpc used for provisioning hosted control plane clusters
-func (r *Provider) createHostedControlPlaneVPC(ctx context.Context, clusterName, awsRegion, workingDir string) (*vpc, error) {
+// createVPC creates the aws vpc used for provisioning hosted control plane or private link clusters
+func (r *Provider) createVPC(ctx context.Context, clusterName, awsRegion, workingDir string, hostedCP, privateLink bool) (*vpc, error) {
 	action := "create"
 	var vpc vpc
+	var tfFile string
 
 	if clusterName == "" || awsRegion == "" || workingDir == "" {
-		return nil, &hcpVPCError{action: action, err: errors.New("one or more parameters is empty")}
+		return nil, &vpcError{action: action, err: errors.New("one or more parameters is empty")}
 	}
 
 	tf, err := terraform.New(ctx, workingDir)
 	if err != nil {
-		return nil, &hcpVPCError{action: action, err: fmt.Errorf("failed to construct terraform runner: %v", err)}
+		return nil, &vpcError{action: action, err: fmt.Errorf("failed to construct terraform runner: %v", err)}
 	}
 
 	if err = tf.SetEnvVars(r.awsCredentials.CredentialsAsMap()); err != nil {
-		return nil, &hcpVPCError{action: action, err: fmt.Errorf("failed to set terraform runner aws credentials (env vars): %v", err)}
+		return nil, &vpcError{action: action, err: fmt.Errorf("failed to set terraform runner aws credentials (env vars): %v", err)}
 	}
 
 	defer func() {
@@ -77,14 +78,22 @@ func (r *Provider) createHostedControlPlaneVPC(ctx context.Context, clusterName,
 
 	r.log.Info("Creating aws vpc", clusterNameLoggerKey, clusterName, awsRegionLoggerKey, awsRegion)
 
-	err = copyFile("assets/setup-hcp-vpc.tf", fmt.Sprintf("%s/setup-hcp-vpc.tf", workingDir))
-	if err != nil {
-		return nil, &hcpVPCError{action: action, err: fmt.Errorf("failed to copy terraform file to working directory: %v", err)}
+	switch {
+	case hostedCP:
+		tfFile = "assets/setup-hcp-vpc.tf"
+	case privateLink:
+		tfFile = "assets/setup-fedramp-vpc.tf"
+	default:
+		return nil, &vpcError{action: action, err: fmt.Errorf("unsupported cluster flavor, hostedCP: %t, privateLink: %t", hostedCP, privateLink)}
+	}
+
+	if err := copyFile(tfFile, fmt.Sprintf("%s/setup-vpc.tf", workingDir)); err != nil {
+		return nil, &vpcError{action: action, err: fmt.Errorf("failed to copy terraform file to working directory: %v", err)}
 	}
 
 	err = tf.Init(ctx)
 	if err != nil {
-		return nil, &hcpVPCError{action: action, err: fmt.Errorf("failed to perform terraform init: %v", err)}
+		return nil, &vpcError{action: action, err: fmt.Errorf("failed to perform terraform init: %v", err)}
 	}
 
 	err = tf.Plan(
@@ -93,17 +102,17 @@ func (r *Provider) createHostedControlPlaneVPC(ctx context.Context, clusterName,
 		tfexec.Var(fmt.Sprintf("cluster_name=%s", clusterName)),
 	)
 	if err != nil {
-		return nil, &hcpVPCError{action: action, err: fmt.Errorf("failed to perform terraform plan: %v", err)}
+		return nil, &vpcError{action: action, err: fmt.Errorf("failed to perform terraform plan: %v", err)}
 	}
 
 	err = tf.Apply(ctx)
 	if err != nil {
-		return nil, &hcpVPCError{action: action, err: fmt.Errorf("failed to perform terraform apply: %v", err)}
+		return nil, &vpcError{action: action, err: fmt.Errorf("failed to perform terraform apply: %v", err)}
 	}
 
 	output, err := tf.Output(ctx)
 	if err != nil {
-		return nil, &hcpVPCError{action: action, err: fmt.Errorf("failed to perform terraform output: %v", err)}
+		return nil, &vpcError{action: action, err: fmt.Errorf("failed to perform terraform output: %v", err)}
 	}
 
 	vpc.privateSubnet = strings.ReplaceAll(string(output["cluster-private-subnet"].Value), "\"", "")
@@ -115,21 +124,21 @@ func (r *Provider) createHostedControlPlaneVPC(ctx context.Context, clusterName,
 	return &vpc, err
 }
 
-// deleteHostedControlPlaneVPC deletes the aws vpc used for provisioning hosted control plane clusters
-func (r *Provider) deleteHostedControlPlaneVPC(ctx context.Context, clusterName, awsRegion, workingDir string) error {
+// deleteVPC deletes the aws vpc used for provisioning hosted control plane or private link clusters
+func (r *Provider) deleteVPC(ctx context.Context, clusterName, awsRegion, workingDir string) error {
 	const action = "delete"
 
 	if clusterName == "" || awsRegion == "" || workingDir == "" {
-		return &hcpVPCError{action: action, err: errors.New("one or more parameters is empty")}
+		return &vpcError{action: action, err: errors.New("one or more parameters is empty")}
 	}
 
 	tf, err := terraform.New(ctx, workingDir)
 	if err != nil {
-		return &hcpVPCError{action: action, err: fmt.Errorf("failed to construct terraform runner: %v", err)}
+		return &vpcError{action: action, err: fmt.Errorf("failed to construct terraform runner: %v", err)}
 	}
 
 	if err = tf.SetEnvVars(r.awsCredentials.CredentialsAsMap()); err != nil {
-		return &hcpVPCError{action: action, err: fmt.Errorf("failed to set terraform runner aws credentials (env vars): %v", err)}
+		return &vpcError{action: action, err: fmt.Errorf("failed to set terraform runner aws credentials (env vars): %v", err)}
 	}
 
 	defer func() {
@@ -140,7 +149,7 @@ func (r *Provider) deleteHostedControlPlaneVPC(ctx context.Context, clusterName,
 
 	err = tf.Init(ctx)
 	if err != nil {
-		return &hcpVPCError{action: action, err: fmt.Errorf("failed to perform terraform init: %v", err)}
+		return &vpcError{action: action, err: fmt.Errorf("failed to perform terraform init: %v", err)}
 	}
 
 	err = tf.Destroy(
@@ -149,7 +158,7 @@ func (r *Provider) deleteHostedControlPlaneVPC(ctx context.Context, clusterName,
 		tfexec.Var(fmt.Sprintf("cluster_name=%s", clusterName)),
 	)
 	if err != nil {
-		return &hcpVPCError{action: action, err: fmt.Errorf("failed to perform terraform destroy: %v", err)}
+		return &vpcError{action: action, err: fmt.Errorf("failed to perform terraform destroy: %v", err)}
 	}
 
 	r.log.Info("AWS vpc deleted!", clusterNameLoggerKey, clusterName)
