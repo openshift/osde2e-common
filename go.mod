@@ -14,7 +14,7 @@ require (
 	github.com/openshift/api v0.0.0-20240522145529-93d6bda14341
 	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250
 	github.com/openshift/library-go v0.0.0-20240517135010-e93e442c2b18
-	github.com/prometheus/client_golang v1.19.1
+	github.com/prometheus/client_golang v1.20.1
 	github.com/prometheus/common v0.55.0
 	k8s.io/api v0.29.0
 	k8s.io/apimachinery v0.29.0
@@ -29,7 +29,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
