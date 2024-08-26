@@ -1,15 +1,13 @@
 reviewers:
-  - dustman9000
+  - mmazur
   - mrsantamaria
-  - aweiteka
   - ritmun
   - jbpratt
   - yiqinzhang
-  - varunraokadaparthi
 approvers:
-  - dustman9000
+  - mmazur
   - mrsantamaria
-  - aweiteka
   - ritmun
   - jbpratt
-  - mmazur
+  - yiqinzhang
+  
