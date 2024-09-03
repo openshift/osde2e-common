@@ -46,6 +46,7 @@ type CreateClusterOptions struct {
 	MachineCidr               string
 	Mode                      string
 	NetworkType               string
+	NoProxy                   string
 	OidcConfigID              string
 	PodCIDR                   string
 	ServiceCIDR               string
@@ -457,6 +458,10 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 
 		if options.AdditionalTrustBundleFile != "" {
 			commandArgs = append(commandArgs, "--additional-trust-bundle-file", options.AdditionalTrustBundleFile)
+		}
+
+		if options.NoProxy != "" {
+			commandArgs = append(commandArgs, "--no-proxy", options.NoProxy)
 		}
 	}
 
