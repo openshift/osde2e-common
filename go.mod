@@ -3,7 +3,7 @@ module github.com/openshift/osde2e-common
 go 1.21
 
 require (
-	github.com/Masterminds/semver/v3 v3.2.1
+	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/go-logr/logr v1.4.2
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/hc-install v0.8.0
