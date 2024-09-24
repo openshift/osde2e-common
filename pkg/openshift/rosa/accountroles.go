@@ -9,6 +9,11 @@ import (
 	"github.com/openshift/osde2e-common/internal/cmd"
 )
 
+const (
+	fedRampRolesCount    = 4 // HCP roles are disabled for FedRamp
+	commercialRolesCount = 7
+)
+
 // accountRoles represents all roles for a given prefix/version
 type accountRoles struct {
 	controlPlaneRoleARN string
@@ -32,7 +37,7 @@ func (a *accountRolesError) Error() string {
 }
 
 // createAccountRoles creates the account roles to be used when creating rosa clusters
-func (r *Provider) createAccountRoles(ctx context.Context, prefix, version, channelGroup string) (*accountRoles, error) {
+func (r *Provider) CreateAccountRoles(ctx context.Context, prefix, version, channelGroup string) (*accountRoles, error) {
 	const action = "create"
 	var (
 		accountRoles *accountRoles
@@ -80,7 +85,7 @@ func (r *Provider) createAccountRoles(ctx context.Context, prefix, version, chan
 }
 
 // deleteAccountRoles deletes the account roles that were created to create rosa clusters
-func (r *Provider) deleteAccountRoles(ctx context.Context, prefix string) error {
+func (r *Provider) DeleteAccountRoles(ctx context.Context, prefix string) error {
 	r.log.Info("Deleting account roles", prefixLoggerKey, prefix, ocmEnvironmentLoggerKey, r.ocmEnvironment)
 
 	commandArgs := []string{
@@ -174,7 +179,10 @@ func (r *Provider) getAccountRoles(ctx context.Context, prefix, version string) 
 	switch {
 	case accountRolesFound == 0:
 		return nil, nil
-	case accountRolesFound != 7:
+	case r.fedRamp && accountRolesFound == fedRampRolesCount:
+		// Rosa blocks the creation of HCP roles for FedRamp clusters
+		return roles, nil
+	case accountRolesFound != commercialRolesCount:
 		return nil, fmt.Errorf("one or more prefixed %q account roles does not exist: %+v", prefix, roles)
 	default:
 		return roles, nil

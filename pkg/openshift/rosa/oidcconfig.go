@@ -24,7 +24,7 @@ func (o *oidcConfigError) Error() string {
 }
 
 // createOIDCConfig creates an oidc config if one does not already exist
-func (r *Provider) createOIDCConfig(ctx context.Context, prefix, installerRoleArn string) (string, error) {
+func (r *Provider) CreateOIDCConfig(ctx context.Context, prefix, installerRoleArn string) (string, error) {
 	const action = "create"
 
 	if prefix == "" || installerRoleArn == "" {
@@ -44,10 +44,14 @@ func (r *Provider) createOIDCConfig(ctx context.Context, prefix, installerRoleAr
 		"create", "oidc-config",
 		"--output", "json",
 		"--mode", "auto",
-		"--prefix", prefix,
-		"--managed=false",
-		"--installer-role-arn", installerRoleArn,
 		"--yes",
+	}
+
+	// The OIDC needs to be `--managed` for FedRamp Which does not support these flags: --prefix, --installer-role-arn
+	if !r.fedRamp {
+		commandArgs = append(commandArgs, "--managed=false")
+		commandArgs = append(commandArgs, "--prefix", prefix)
+		commandArgs = append(commandArgs, "--installer-role-arn", installerRoleArn)
 	}
 
 	r.log.Info("Creating OIDC config", prefixLoggerKey, prefix, ocmEnvironmentLoggerKey, r.ocmEnvironment)
@@ -68,7 +72,7 @@ func (r *Provider) createOIDCConfig(ctx context.Context, prefix, installerRoleAr
 }
 
 // deleteOIDCConfig deletes the oidc config using the id
-func (r *Provider) deleteOIDCConfig(ctx context.Context, oidcConfigID string) error {
+func (r *Provider) DeleteOIDCConfig(ctx context.Context, oidcConfigID string) error {
 	commandArgs := []string{
 		"delete", "oidc-config",
 		"--mode", "auto",

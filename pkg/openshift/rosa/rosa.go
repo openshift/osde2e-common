@@ -33,6 +33,8 @@ type Provider struct {
 
 	AWSRegion  string
 	rosaBinary string
+
+	fedRamp bool
 }
 
 // providerError represents the provider custom error
@@ -48,7 +50,10 @@ func (r *providerError) Error() string {
 // RunCommand runs the rosa command provided
 func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (io.Writer, io.Writer, error) {
 	command.Env = append(command.Environ(), r.awsCredentials.CredentialsAsList()...)
-	command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
+	// If r.ocmEnvironment is not fedramp, then set the OCM_CONFIG environment variable
+	if !r.fedRamp {
+		command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
+	}
 	commandWithArgs := fmt.Sprintf("rosa%s", strings.Split(command.String(), "rosa")[1])
 	r.log.Info("Command", rosaCommandLoggerKey, commandWithArgs)
 	return cmd.Run(command)
@@ -234,6 +239,7 @@ func New(ctx context.Context, token string, clientID string, clientSecret string
 	if err != nil {
 		return nil, &providerError{err: fmt.Errorf("aws credential set and validation failed: %v", err)}
 	}
+	isFedRamp := strings.Contains(awsCredentials.Region, "gov")
 
 	err = verifyLogin(ctx, rosaBinary, token, clientID, clientSecret, ocmEnvironment, awsCredentials)
 	if err != nil {
@@ -242,6 +248,7 @@ func New(ctx context.Context, token string, clientID string, clientSecret string
 
 	provider := &Provider{
 		awsCredentials: awsCredentials,
+		fedRamp:        isFedRamp,
 		ocmEnvironment: ocmEnvironment,
 		rosaBinary:     rosaBinary,
 		Client:         nil,
