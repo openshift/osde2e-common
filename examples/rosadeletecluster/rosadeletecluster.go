@@ -47,7 +47,7 @@ func main() {
 	}
 
 	if hostedCP {
-		deleteOptions.DeleteHostedCPVPC = true
+		deleteOptions.DeleteHostedVPC = true
 		deleteOptions.DeleteOidcConfigID = true
 	}
 
