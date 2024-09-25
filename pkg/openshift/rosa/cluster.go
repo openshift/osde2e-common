@@ -72,7 +72,7 @@ type DeleteClusterOptions struct {
 
 	oidcConfigID string
 
-	DeleteHostedCPVPC  bool
+	DeleteHostedVPC    bool
 	DeleteOidcConfigID bool
 	HostedCP           bool
 	STS                bool
@@ -219,7 +219,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		return &clusterError{action: action, err: fmt.Errorf("failed to locate cluster in ocm environment: %s: %s", r.ocmEnvironment, err)}
 	}
 
-	if options.HostedCP {
+	if options.HostedCP || options.PrivateLink {
 		options.oidcConfigID = cluster.AWS().STS().OidcConfig().ID()
 	}
 
@@ -233,7 +233,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		return &clusterError{action: action, err: err}
 	}
 
-	if options.STS {
+	if options.STS || options.PrivateLink {
 		operatorRolePrefix := cluster.AWS().STS().OperatorRolePrefix()
 		err = r.deleteOperatorRoles(ctx, cluster.ID(), operatorRolePrefix, options.oidcConfigID)
 		if err != nil {
@@ -246,7 +246,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		}
 	}
 
-	if options.HostedCP {
+	if options.HostedCP || options.PrivateLink {
 		if options.DeleteOidcConfigID {
 			err := r.DeleteOIDCConfig(ctx, options.oidcConfigID)
 			if err != nil {
@@ -254,7 +254,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 			}
 		}
 
-		if options.DeleteHostedCPVPC {
+		if options.DeleteHostedVPC {
 			err = r.deleteVPC(
 				ctx,
 				cluster.Name(),
