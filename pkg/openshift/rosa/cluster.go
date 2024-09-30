@@ -594,7 +594,7 @@ func (r *Provider) waitForClusterToBeHealthy(ctx context.Context, client *opensh
 
 		return client.HCPClusterHealthy(ctx, cluster.Nodes().Compute(), timeout)
 	}
-	return client.OSDClusterHealthy(ctx, "osd-cluster-ready", reportDir, timeout)
+	return client.OSDClusterHealthy(ctx, reportDir, timeout)
 }
 
 // waitForClusterToBeDeleted waits for the cluster to be deleted
