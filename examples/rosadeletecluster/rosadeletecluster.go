@@ -28,6 +28,7 @@ func main() {
 		os.Getenv("OCM_TOKEN"),
 		os.Getenv("OCM_CLIENT_ID"),
 		os.Getenv("OCM_CLIENT_SECRET"),
+		os.Getenv("DEBUG"),
 		ocmclient.Stage,
 		logger,
 		&awscloud.AWSCredentials{Profile: "", Region: ""},
