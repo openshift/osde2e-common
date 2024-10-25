@@ -33,6 +33,7 @@ type Provider struct {
 
 	AWSRegion  string
 	rosaBinary string
+	debug      string
 
 	fedRamp bool
 }
@@ -54,6 +55,11 @@ func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (io.Writer
 	if !r.fedRamp {
 		command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
 	}
+
+	if r.debug == "true" {
+		command.Args = append(command.Args, "--debug")
+	}
+
 	commandWithArgs := fmt.Sprintf("rosa%s", strings.Split(command.String(), "rosa")[1])
 	r.log.Info("Command", rosaCommandLoggerKey, commandWithArgs)
 	return cmd.Run(command)
@@ -213,7 +219,7 @@ func verifyLogin(ctx context.Context, rosaBinary string, token string, clientID 
 // New handles constructing the rosa provider which creates a connection
 // to openshift cluster manager "ocm". It is the callers responsibility
 // to close the ocm connection when they are finished (defer provider.Connection.Close())
-func New(ctx context.Context, token string, clientID string, clientSecret string, ocmEnvironment ocmclient.Environment, logger logr.Logger, args ...*awscloud.AWSCredentials) (*Provider, error) {
+func New(ctx context.Context, token string, clientID string, clientSecret string, debug string, ocmEnvironment ocmclient.Environment, logger logr.Logger, args ...*awscloud.AWSCredentials) (*Provider, error) {
 	if ocmEnvironment == "" || (token == "" && (clientID == "" || clientSecret == "")) {
 		return nil, &providerError{err: errors.New("some parameters are undefined, unable to construct osd provider")}
 	}
@@ -221,6 +227,10 @@ func New(ctx context.Context, token string, clientID string, clientSecret string
 	rosaBinary, err := cliCheck()
 	if err != nil {
 		return nil, &providerError{err: err}
+	}
+
+	if debug == "true" {
+		os.Setenv("ROSA_DEBUG", "true")
 	}
 
 	version, err := getVersion(ctx, rosaBinary)
@@ -251,6 +261,7 @@ func New(ctx context.Context, token string, clientID string, clientSecret string
 		fedRamp:        isFedRamp,
 		ocmEnvironment: ocmEnvironment,
 		rosaBinary:     rosaBinary,
+		debug:          debug,
 		Client:         nil,
 		log:            logger,
 	}
