@@ -657,6 +657,7 @@ func (o *CreateClusterOptions) setHealthCheckTimeout(duration time.Duration) {
 func (o *DeleteClusterOptions) setDefaultDeleteClusterOptions() {
 	if o.HostedCP {
 		o.STS = true
+		o.DeleteHostedVPC = true
 	}
 
 	if o.ArtifactDir == "" {
