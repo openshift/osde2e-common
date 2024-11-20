@@ -5,7 +5,7 @@ go 1.22.3
 toolchain go1.23.1
 
 require (
-	github.com/Masterminds/semver/v3 v3.3.0
+	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/go-logr/logr v1.4.2
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/hc-install v0.9.0
