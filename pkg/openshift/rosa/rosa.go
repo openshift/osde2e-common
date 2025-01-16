@@ -50,10 +50,6 @@ func (r *providerError) Error() string {
 // RunCommand runs the rosa command provided
 func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (io.Writer, io.Writer, error) {
 	command.Env = append(command.Environ(), r.awsCredentials.CredentialsAsList()...)
-	// If r.ocmEnvironment is not fedramp, then set the OCM_CONFIG environment variable
-	if !r.fedRamp {
-		command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
-	}
 	commandWithArgs := fmt.Sprintf("rosa%s", strings.Split(command.String(), "rosa")[1])
 	r.log.Info("Command", rosaCommandLoggerKey, commandWithArgs)
 	return cmd.Run(command)
@@ -189,10 +185,10 @@ func verifyLogin(ctx context.Context, rosaBinary string, token string, clientID 
 	if clientID != "" && clientSecret != "" {
 		command.Args = append(command.Args, "--client-id", clientID)
 		command.Args = append(command.Args, "--client-secret", clientSecret)
-		command.Args = append(command.Args, "--govcloud")
 		// TODO: Work around. The rosa cli for govcloud does not support the --env passing the api endpoint.
 		// The environment selection can be handled with a data structure that maps the environment to the api endpoint.
 		if ocmEnvironment == "https://api.int.openshiftusgov.com" {
+			command.Args = append(command.Args, "--govcloud")
 			ocmEnvironment = "integration"
 		}
 	} else {
