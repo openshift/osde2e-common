@@ -3,6 +3,7 @@ package ocm
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	ocmsdk "github.com/openshift-online/ocm-sdk-go"
 )
@@ -31,11 +32,11 @@ func New(ctx context.Context,
 ) (*Client, error) {
 	connectionBuilder := ocmsdk.NewConnectionBuilder().URL(string(environment))
 
-	if clientID != "" && clientSecret != "" {
+	if strings.Contains(string(environment), "fr") {
 		connectionBuilder.Client(clientID, clientSecret).
 			TokenURL(fedrampTokenURL)
 	} else {
-		connectionBuilder.Tokens(token)
+		connectionBuilder.Client(clientID, clientSecret)
 	}
 
 	connection, err := connectionBuilder.BuildContext(ctx)
