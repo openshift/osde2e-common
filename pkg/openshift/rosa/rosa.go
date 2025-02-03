@@ -191,10 +191,16 @@ func verifyLogin(ctx context.Context, rosaBinary string, token string, clientID 
 			command.Args = append(command.Args, "--govcloud")
 			ocmEnvironment = "integration"
 		}
-	} else {
+	} else if token != "" {
 		command.Args = append(command.Args, "--token", token)
-		command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
+	} else {
+		return fmt.Errorf("no authentication details provided")
 	}
+	/*
+		The OCM_CONFIG variable is part of the ocm-cli functionality, for more information this is the description ocm-cli repo.
+		https://github.com/openshift-online/ocm-cli?tab=readme-ov-file#multiple-concurrent-logins-with-ocm_config
+	*/
+	command.Env = append(command.Env, fmt.Sprintf("OCM_CONFIG=%s/ocm.json", os.TempDir()))
 	command.Args = append(command.Args, "--env", string(ocmEnvironment))
 	command.Args = append(command.Args, "--region", string(awsCredentials.Region))
 
