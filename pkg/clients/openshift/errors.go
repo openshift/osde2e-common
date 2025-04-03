@@ -7,7 +7,7 @@ import (
 	utilnet "k8s.io/apimachinery/pkg/util/net"
 )
 
-func isRetryableAPIError(err error) bool {
+func IsRetryableAPIError(err error) bool {
 	// These errors may indicate a transient error that we can retry in tests.
 	if apierrors.IsInternalError(err) || apierrors.IsTimeout(err) || apierrors.IsServerTimeout(err) ||
 		apierrors.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) ||
