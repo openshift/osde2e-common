@@ -103,13 +103,21 @@ func cliCheck() (string, error) {
 	if err != nil || response.StatusCode == http.StatusNotFound {
 		return "", fmt.Errorf("failed to download %s: %v", url, err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err = response.Body.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	tarFile, err := os.Create(rosaTarFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create %s tar file: %v", rosaTarFilePath, err)
 	}
-	defer tarFile.Close()
+	defer func() {
+		if err = tarFile.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	rosaFile, err := os.Create(rosaFilename)
 	if err != nil {
@@ -121,7 +129,11 @@ func cliCheck() (string, error) {
 		return "", fmt.Errorf("failed to set file permissions to 0755 for %s: %v", rosaFilename, err)
 	}
 
-	defer rosaFile.Close()
+	defer func() {
+		if err = rosaFile.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	_, err = io.Copy(tarFile, response.Body)
 	if err != nil {
@@ -132,13 +144,21 @@ func cliCheck() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to open %s: %v", rosaTarFilePath, err)
 	}
-	defer tarFileReader.Close()
+	defer func() {
+		if err = tarFileReader.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	gzipReader, err := gzip.NewReader(tarFileReader)
 	if err != nil {
 		return "", fmt.Errorf("failed to create gzip reader for %s: %v", rosaTarFilePath, err)
 	}
-	defer gzipReader.Close()
+	defer func() {
+		if err = gzipReader.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	tarReader := tar.NewReader(gzipReader)
 

@@ -37,13 +37,21 @@ func copyFile(srcFile, destFile string) error {
 	if err != nil {
 		return fmt.Errorf("error opening %s file: %w", srcFile, err)
 	}
-	defer srcReader.Close()
+	defer func() {
+		if err = srcReader.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	destReader, err := os.Create(destFile)
 	if err != nil {
 		return fmt.Errorf("error creating runtime %s file: %w", destFile, err)
 	}
-	defer destReader.Close()
+	defer func() {
+		if err = destReader.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	_, err = io.Copy(destReader, srcReader)
 	if err != nil {

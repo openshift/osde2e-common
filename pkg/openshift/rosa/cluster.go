@@ -176,13 +176,13 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		return "", &clusterError{action: action, err: err}
 	}
 
-	err = r.waitForClusterToBeInstalled(ctx, clusterID, options.ClusterName, options.ArtifactDir, options.InstallTimeout)
+	err = r.waitForClusterToBeInstalled(ctx, clusterID, options.ClusterName, options.InstallTimeout)
 	if err != nil {
 		return clusterID, &clusterError{action: action, err: err}
 	}
 
 	if !options.SkipHealthCheck {
-		kubeconfigFile, err := r.Client.KubeconfigFile(ctx, clusterID, os.TempDir())
+		kubeconfigFile, err := r.KubeconfigFile(ctx, clusterID, os.TempDir())
 		if err != nil {
 			return clusterID, &clusterError{action: action, err: err}
 		}
@@ -539,7 +539,7 @@ func (r *Provider) deleteCluster(ctx context.Context, clusterID string) error {
 }
 
 // waitForClusterToBeInstalled waits for the cluster to be in a ready state
-func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, clusterName, reportDir string, timeout time.Duration) error {
+func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, clusterName string, timeout time.Duration) error {
 	getClusterState := func() (string, error) {
 		commandArgs := []string{
 			"describe", "cluster",

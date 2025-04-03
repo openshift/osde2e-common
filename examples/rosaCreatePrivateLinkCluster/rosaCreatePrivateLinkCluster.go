@@ -50,7 +50,7 @@ func main() {
 	}
 
 	defer func() {
-		_ = provider.Client.Close()
+		_ = provider.Close()
 	}()
 
 	clusterID, err := provider.CreateCluster(

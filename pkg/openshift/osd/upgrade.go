@@ -96,7 +96,7 @@ func (o *Provider) gateAgreementExistForCluster(ctx context.Context, clusterID, 
 // addGateAgreement adds a version gate agreement to the cluster ocm resource.
 // Version gate agreement are used to acknowledge the cluster can be upgraded between versions
 func (o *Provider) addGateAgreement(ctx context.Context, clusterID string, currentVersion, upgradeVersion semver.Version) error {
-	if !(currentVersion.Minor() < upgradeVersion.Minor()) {
+	if currentVersion.Minor() > upgradeVersion.Minor() {
 		o.log.Info("Gate agreement not required for z stream upgrades", clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, o.ocmEnvironment)
 		return nil
 	}
