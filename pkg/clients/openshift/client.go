@@ -56,7 +56,7 @@ func (c *Client) Impersonate(user string, groups ...string) (*Client, error) {
 	}
 
 	client := *c
-	newRestConfig := rest.CopyConfig(c.Resources.GetConfig())
+	newRestConfig := rest.CopyConfig(c.GetConfig())
 	newRestConfig.Impersonate = rest.ImpersonationConfig{UserName: user, Groups: groups}
 	newResources, err := resources.New(newRestConfig)
 	if err != nil {

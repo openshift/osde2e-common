@@ -26,7 +26,7 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, reportDir string, timeou
 		job := new(batchv1.Job)
 		if err := c.Get(ctx, osdClusterReadyName, osdClusterReadyNamespace, job); err != nil {
 			c.log.Error(err, fmt.Sprintf("failed to get job %s/%s", osdClusterReadyNamespace, osdClusterReadyName))
-			if isRetryableAPIError(err) || apierrors.IsNotFound(err) {
+			if IsRetryableAPIError(err) || apierrors.IsNotFound(err) {
 				return false, nil
 			}
 			return false, err
