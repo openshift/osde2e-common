@@ -55,7 +55,7 @@ type CreateClusterOptions struct {
 	Version                   string
 	WorkingDir                string
 
-	accountRoles accountRoles
+	accountRoles AccountRoles
 
 	Properties map[string]string
 

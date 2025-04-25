@@ -14,8 +14,8 @@ const (
 	commercialRolesCount = 7
 )
 
-// accountRoles represents all roles for a given prefix/version
-type accountRoles struct {
+// AccountRoles represents all roles for a given prefix/version
+type AccountRoles struct {
 	controlPlaneRoleARN string
 	installerRoleARN    string
 	supportRoleARN      string
@@ -37,10 +37,10 @@ func (a *accountRolesError) Error() string {
 }
 
 // createAccountRoles creates the account roles to be used when creating rosa clusters
-func (r *Provider) CreateAccountRoles(ctx context.Context, prefix, version, channelGroup string) (*accountRoles, error) {
+func (r *Provider) CreateAccountRoles(ctx context.Context, prefix, version, channelGroup string) (*AccountRoles, error) {
 	const action = "create"
 	var (
-		accountRoles *accountRoles
+		accountRoles *AccountRoles
 		err          error
 	)
 
@@ -106,10 +106,10 @@ func (r *Provider) DeleteAccountRoles(ctx context.Context, prefix string) error 
 }
 
 // getAccountRoles gets the account roles matching the provided prefix and version
-func (r *Provider) getAccountRoles(ctx context.Context, prefix, version string) (*accountRoles, error) {
+func (r *Provider) getAccountRoles(ctx context.Context, prefix, version string) (*AccountRoles, error) {
 	var (
 		accountRolesFound = 0
-		roles             = &accountRoles{}
+		roles             = &AccountRoles{}
 	)
 
 	commandArgs := []string{
@@ -141,7 +141,7 @@ func (r *Provider) getAccountRoles(ctx context.Context, prefix, version string) 
 			continue
 		}
 
-		if strings.HasPrefix(roleName, "HCP-ROSA") {
+		if strings.HasPrefix(roleName, "HCP-ROSA") || strings.HasPrefix(roleName, prefix+"-HCP-ROSA") {
 			switch roleType {
 			case "Installer", "Support", "Worker":
 				accountRolesFound += 1
@@ -150,7 +150,7 @@ func (r *Provider) getAccountRoles(ctx context.Context, prefix, version string) 
 					roles.hcpInstallerRoleARN = roleARN
 				case "Support":
 					roles.hcpSupportRoleARN = roleARN
-				case "Worker":
+				default:
 					roles.hcpWorkerRoleARN = roleARN
 				}
 			default:
@@ -167,7 +167,7 @@ func (r *Provider) getAccountRoles(ctx context.Context, prefix, version string) 
 					roles.installerRoleARN = roleARN
 				case "Support":
 					roles.supportRoleARN = roleARN
-				case "Worker":
+				default:
 					roles.workerRoleARN = roleARN
 				}
 			default:
