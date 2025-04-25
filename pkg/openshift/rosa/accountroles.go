@@ -46,7 +46,7 @@ func (r *Provider) CreateAccountRoles(ctx context.Context, prefix, version, chan
 
 	r.log.Info("Checking whether account roles exist", prefixLoggerKey, prefix, versionLoggerKey, version,
 		clusterChannelGroupLoggerKey, channelGroup, ocmEnvironmentLoggerKey, r.ocmEnvironment)
-	if accountRoles, err = r.getAccountRoles(ctx, prefix, version); err != nil {
+	if accountRoles, err = r.getAccountRoles(ctx, prefix); err != nil {
 		return nil, &accountRolesError{action: action, err: err}
 	}
 
@@ -68,7 +68,7 @@ func (r *Provider) CreateAccountRoles(ctx context.Context, prefix, version, chan
 			return nil, &accountRolesError{action: action, err: fmt.Errorf("error: %v, stderr: %v", err, stderr)}
 		}
 
-		if accountRoles, err = r.getAccountRoles(ctx, prefix, version); err != nil {
+		if accountRoles, err = r.getAccountRoles(ctx, prefix); err != nil {
 			return nil, &accountRolesError{action: action, err: fmt.Errorf("failed to get account roles post account roles creation: %v", err)}
 		}
 
@@ -105,8 +105,8 @@ func (r *Provider) DeleteAccountRoles(ctx context.Context, prefix string) error 
 	return nil
 }
 
-// getAccountRoles gets the account roles matching the provided prefix and version
-func (r *Provider) getAccountRoles(ctx context.Context, prefix, version string) (*AccountRoles, error) {
+// getAccountRoles gets the account roles matching the provided prefix
+func (r *Provider) getAccountRoles(ctx context.Context, prefix string) (*AccountRoles, error) {
 	var (
 		accountRolesFound = 0
 		roles             = &AccountRoles{}
@@ -130,14 +130,9 @@ func (r *Provider) getAccountRoles(ctx context.Context, prefix, version string) 
 	for _, accountRole := range availableAccountRoles {
 		roleName := fmt.Sprint(accountRole["RoleName"])
 		roleARN := fmt.Sprint(accountRole["RoleARN"])
-		roleVersion := fmt.Sprint(accountRole["Version"])
 		roleType := fmt.Sprint(accountRole["RoleType"])
 
 		if !strings.HasPrefix(roleName, prefix) {
-			continue
-		}
-
-		if version != roleVersion {
 			continue
 		}
 
