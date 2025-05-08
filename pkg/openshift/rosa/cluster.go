@@ -507,11 +507,13 @@ func (r *Provider) findCluster(ctx context.Context, clusterName string) (*cluste
 		Page(1).
 		Size(1).
 		SendContext(ctx)
-
-	if response.Total() == 1 {
-		return response.Items().Slice()[0], nil
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving cluster %q from ocm %q: %v", clusterName, r.ocmEnvironment, err)
 	}
-	return nil, fmt.Errorf("cluster %q not found in ocm %q: %v", clusterName, r.ocmEnvironment, err)
+	if response == nil || response.Items().Len() == 0 {
+		return nil, fmt.Errorf("empty response for cluster %q from ocm %q", clusterName, r.ocmEnvironment)
+	}
+	return response.Items().Slice()[0], nil
 }
 
 // deleteCluster handles sending the request to delete the cluster
