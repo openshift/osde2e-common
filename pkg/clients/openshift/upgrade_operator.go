@@ -239,8 +239,12 @@ func (c *Client) getReplacesCSV(ctx context.Context, name, namespace, channel st
 
 	// TODO: this doesn't fail _when_ the job fails, it waits for it to be completed
 	if err := wait.For(conditions.New(c.Resources).JobCompleted(job), wait.WithTimeout(30*time.Second), wait.WithInterval(3*time.Second)); err != nil {
-		// TODO: query pod logs for why we failed
-		return "", fmt.Errorf("job %s/%s did not finish successfully: %w", namespace, job.GetName(), err)
+		logs, logerr := c.GetJobLogs(ctx, job.GetName(), job.GetNamespace())
+		if logerr == nil {
+			return "", fmt.Errorf("job %s/%s did not finish successfully. job log: %s", namespace, job.GetName(), logs)
+		} else {
+			return "", fmt.Errorf("job %s/%s did not finish successfully. Could not get job log.: %w; %w", namespace, job.GetName(), err, logerr)
+		}
 	}
 
 	logs, err := c.GetJobLogs(ctx, job.GetName(), namespace)
