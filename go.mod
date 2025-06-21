@@ -7,7 +7,7 @@ toolchain go1.23.7
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/go-logr/logr v1.4.3
-	github.com/hashicorp/go-retryablehttp v0.7.7
+	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/hashicorp/hc-install v0.9.1
 	github.com/hashicorp/terraform-exec v0.22.0
 	github.com/onsi/ginkgo/v2 v2.23.3
