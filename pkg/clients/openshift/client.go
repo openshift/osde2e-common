@@ -79,7 +79,7 @@ func (c *Client) GetPodLogs(ctx context.Context, name, namespace string) (string
 	}
 	logData, err := clientSet.CoreV1().Pods(namespace).GetLogs(name, &corev1.PodLogOptions{}).DoRaw(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get pod %s/%s logs: %w", name, namespace, err)
+		return "", fmt.Errorf("failed to get pod %s/%s logs: %w", namespace, name, err)
 	}
 	return string(logData), nil
 }
