@@ -156,6 +156,9 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		}
 	}
 
+	// Track if we created a VPC so we can clean it up on failure
+	var createdVPC bool
+
 	if options.HostedCP || options.PrivateLink {
 		if options.SubnetIDs == "" {
 			vpc, err := r.createVPC(
@@ -170,11 +173,20 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 				return "", &clusterError{action: action, err: err}
 			}
 			options.SubnetIDs = fmt.Sprintf("%s,%s", vpc.privateSubnet, vpc.publicSubnet)
+			createdVPC = true
 		}
 	}
 
 	clusterID, err := r.createCluster(ctx, options)
 	if err != nil {
+		if createdVPC {
+			r.log.Info("Cleaning up VPC due to cluster creation failure", clusterNameLoggerKey, options.ClusterName)
+			if cleanupErr := r.deleteVPC(ctx, options.ClusterName, r.awsCredentials.Region, options.WorkingDir); cleanupErr != nil {
+				r.log.Error(cleanupErr, "Failed to cleanup VPC after cluster creation failure", clusterNameLoggerKey, options.ClusterName)
+			} else {
+				r.log.Info("Successfully cleaned up VPC after cluster creation failure", clusterNameLoggerKey, options.ClusterName)
+			}
+		}
 		return "", &clusterError{action: action, err: err}
 	}
 
