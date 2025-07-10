@@ -95,6 +95,40 @@ func (c *clusterError) Error() string {
 	return fmt.Sprintf("%s cluster failed: %v", c.action, c.err)
 }
 
+// createdResources tracks what resources were created and handles cleanup
+type createdResources struct {
+	createdVPC         bool
+	clusterName        string
+	accountRolesPrefix string
+	oidcConfigID       string
+	region             string
+	workingDir         string
+}
+
+// cleanup performs cleanup of created resources in reverse order
+func (r *Provider) cleanup(ctx context.Context, resources *createdResources) {
+	if resources.createdVPC {
+		r.log.Info("Cleaning up VPC due to cluster creation failure")
+		if err := r.deleteVPC(ctx, resources.clusterName, resources.region, resources.workingDir); err != nil {
+			r.log.Error(err, "Failed to cleanup VPC after cluster creation failure")
+		}
+	}
+
+	if resources.oidcConfigID != "" {
+		r.log.Info("Cleaning up OIDC config due to cluster creation failure")
+		if err := r.DeleteOIDCConfig(ctx, resources.oidcConfigID); err != nil {
+			r.log.Error(err, "Failed to cleanup OIDC config after cluster creation failure")
+		}
+	}
+
+	if resources.accountRolesPrefix != "" {
+		r.log.Info("Cleaning up account roles due to cluster creation failure")
+		if err := r.DeleteAccountRoles(ctx, resources.accountRolesPrefix); err != nil {
+			r.log.Error(err, "Failed to cleanup account roles after cluster creation failure")
+		}
+	}
+}
+
 // CreateCluster creates a rosa cluster using the provided inputs
 func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOptions) (string, error) {
 	const action = "create"
@@ -126,6 +160,13 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		return "", &clusterError{action: action, err: err}
 	}
 
+	// Track what resources we create for resource cleanup on failure
+	resources := &createdResources{
+		clusterName: options.ClusterName,
+		region:      r.awsCredentials.Region,
+		workingDir:  options.WorkingDir,
+	}
+
 	if options.HostedCP || options.STS {
 		version, err := semver.NewVersion(options.Version)
 		if err != nil {
@@ -144,6 +185,11 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 		}
 		options.accountRoles = *accountRoles
 
+		// Only track for cleanup if we created custom roles (not default ones)
+		if !options.UseDefaultAccountRolesPrefix {
+			resources.accountRolesPrefix = accountRolesPrefix
+		}
+
 		if options.OidcConfigID == "" {
 			options.OidcConfigID, err = r.CreateOIDCConfig(
 				ctx,
@@ -151,13 +197,12 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 				options.accountRoles.installerRoleARN,
 			)
 			if err != nil {
+				r.cleanup(ctx, resources)
 				return "", &clusterError{action: action, err: err}
 			}
+			resources.oidcConfigID = options.OidcConfigID
 		}
 	}
-
-	// Track if we created a VPC so we can clean it up on failure
-	var createdVPC bool
 
 	if options.HostedCP || options.PrivateLink {
 		if options.SubnetIDs == "" {
@@ -170,23 +215,17 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 				options.PrivateLink,
 			)
 			if err != nil {
+				r.cleanup(ctx, resources)
 				return "", &clusterError{action: action, err: err}
 			}
 			options.SubnetIDs = fmt.Sprintf("%s,%s", vpc.privateSubnet, vpc.publicSubnet)
-			createdVPC = true
+			resources.createdVPC = true
 		}
 	}
 
 	clusterID, err := r.createCluster(ctx, options)
 	if err != nil {
-		if createdVPC {
-			r.log.Info("Cleaning up VPC due to cluster creation failure", clusterNameLoggerKey, options.ClusterName)
-			if cleanupErr := r.deleteVPC(ctx, options.ClusterName, r.awsCredentials.Region, options.WorkingDir); cleanupErr != nil {
-				r.log.Error(cleanupErr, "Failed to cleanup VPC after cluster creation failure", clusterNameLoggerKey, options.ClusterName)
-			} else {
-				r.log.Info("Successfully cleaned up VPC after cluster creation failure", clusterNameLoggerKey, options.ClusterName)
-			}
-		}
+		r.cleanup(ctx, resources)
 		return "", &clusterError{action: action, err: err}
 	}
 
