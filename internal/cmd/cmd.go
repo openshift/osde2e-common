@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os/exec"
 )
 
 // Run executes the os.exec command provided
-func Run(command *exec.Cmd) (io.Writer, io.Writer, error) {
+func Run(command *exec.Cmd) (bytes.Buffer, bytes.Buffer, error) {
 	var stdout, stderr bytes.Buffer
 
 	// TODO: Configure tee output to file and buffer
@@ -18,21 +17,21 @@ func Run(command *exec.Cmd) (io.Writer, io.Writer, error) {
 
 	err := command.Start()
 	if err != nil {
-		return command.Stdout, command.Stderr, fmt.Errorf("failed to start command: %v", err)
+		return stdout, stderr, fmt.Errorf("failed to start command: %v", err)
 	}
 
 	err = command.Wait()
 	if err != nil {
-		return command.Stdout, command.Stderr, fmt.Errorf("failed to wait for command to finish: %v", err)
+		return stdout, stderr, fmt.Errorf("failed to wait for command to finish: %v", err)
 	}
 
-	return command.Stdout, command.Stderr, nil
+	return stdout, stderr, nil
 }
 
 // ConvertOutputToMap converts a json string formatted to a map object
-func ConvertOutputToMap(data io.Writer) (map[string]any, error) {
+func ConvertOutputToMap(data bytes.Buffer) (map[string]any, error) {
 	var result map[string]any
-	err := json.Unmarshal([]byte(fmt.Sprint(data)), &result)
+	err := json.Unmarshal(data.Bytes(), &result)
 	if err != nil {
 		return nil, err
 	}
@@ -40,9 +39,9 @@ func ConvertOutputToMap(data io.Writer) (map[string]any, error) {
 }
 
 // ConvertOutputToListOfMaps converts a list of json string formatted to a list of map objects
-func ConvertOutputToListOfMaps(data io.Writer) ([]map[string]any, error) {
+func ConvertOutputToListOfMaps(data bytes.Buffer) ([]map[string]any, error) {
 	var result []map[string]any
-	err := json.Unmarshal([]byte(fmt.Sprint(data)), &result)
+	err := json.Unmarshal(data.Bytes(), &result)
 	if err != nil {
 		return nil, err
 	}

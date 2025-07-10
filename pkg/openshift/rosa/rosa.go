@@ -2,6 +2,7 @@ package rosa
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"errors"
@@ -48,7 +49,7 @@ func (r *providerError) Error() string {
 }
 
 // RunCommand runs the rosa command provided
-func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (io.Writer, io.Writer, error) {
+func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (bytes.Buffer, bytes.Buffer, error) {
 	command.Env = append(command.Environ(), r.awsCredentials.CredentialsAsList()...)
 	commandWithArgs := fmt.Sprintf("rosa%s", strings.Split(command.String(), "rosa")[1])
 	r.log.Info("Command", rosaCommandLoggerKey, commandWithArgs)
