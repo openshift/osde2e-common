@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,6 +26,12 @@ const (
 	downloadURL = "https://mirror.openshift.com/pub/openshift-v4/clients/rosa"
 )
 
+// accountInfo represents the rosa whoami command response
+type accountInfo struct {
+	AWSAccountID     string `json:"AWS Account ID"`
+	AWSDefaultRegion string `json:"AWS Default Region"`
+}
+
 // Provider is a rosa provider
 type Provider struct {
 	*ocmclient.Client
@@ -34,6 +41,7 @@ type Provider struct {
 
 	AWSRegion  string
 	rosaBinary string
+	user       *accountInfo
 
 	fedRamp bool
 }
@@ -54,6 +62,23 @@ func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (bytes.Buf
 	commandWithArgs := fmt.Sprintf("rosa%s", strings.Split(command.String(), "rosa")[1])
 	r.log.Info("Command", rosaCommandLoggerKey, commandWithArgs)
 	return cmd.Run(command)
+}
+
+// whoami runs 'rosa whoami -o json' and parses the response
+func (r *Provider) whoami(ctx context.Context) (*accountInfo, error) {
+	commandArgs := []string{"whoami", "-o", "json"}
+
+	stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
+	if err != nil {
+		return nil, fmt.Errorf("failed to run rosa whoami: %v, stderr: %s", err, stderr.String())
+	}
+
+	acctInfo := &accountInfo{}
+	if err := json.Unmarshal(stdout.Bytes(), acctInfo); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal whoami output: %v", err)
+	}
+
+	return acctInfo, nil
 }
 
 // Uninstall removes the rosa cli that was downloaded to the systems temp directory
@@ -277,6 +302,13 @@ func New(ctx context.Context, token string, clientID string, clientSecret string
 		Client:         nil,
 		log:            logger,
 	}
+
+	// Get user information via rosa whoami
+	acctInfo, err := provider.whoami(ctx)
+	if err != nil {
+		return nil, &providerError{err: fmt.Errorf("failed to get user information: %v", err)}
+	}
+	provider.user = acctInfo
 
 	if awsCredentials.Region == "random" {
 		// Set a temporary region to select a random region later on

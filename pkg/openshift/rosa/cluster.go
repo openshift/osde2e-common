@@ -63,7 +63,7 @@ type CreateClusterOptions struct {
 	HealthCheckTimeout time.Duration
 	ExpirationDuration time.Duration
 
-	BillingAccountID string 
+	BillingAccountID string
 }
 
 // DeleteClusterOptions represents data used to delete clusters
@@ -407,8 +407,8 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 		commandArgs = append(commandArgs, "--mode", "auto")
 	}
 
-	if options.HostedCP && options.BillingAccountID == "" {
-		return "", errors.New("billing account ID is required for hosted control plane clusters")
+	if options.BillingAccountID == "" {
+		options.BillingAccountID = r.user.AWSAccountID
 	}
 
 	if options.HostedCP {
