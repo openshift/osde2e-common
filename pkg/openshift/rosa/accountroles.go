@@ -65,7 +65,7 @@ func (r *Provider) CreateAccountRoles(ctx context.Context, prefix, version, chan
 
 		// TODO: Open an RFE to rosa to support --output option
 		if _, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...)); err != nil {
-			return nil, &accountRolesError{action: action, err: fmt.Errorf("error: %v, stderr: %v", err, stderr)}
+			return nil, &accountRolesError{action: action, err: fmt.Errorf("error: %v, stderr: %s", err, stderr.String())}
 		}
 
 		if accountRoles, err = r.getAccountRoles(ctx, prefix); err != nil {
@@ -97,7 +97,7 @@ func (r *Provider) DeleteAccountRoles(ctx context.Context, prefix string) error 
 
 	_, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return &accountRolesError{action: "delete", err: fmt.Errorf("error: %v, stderr: %v", err, stderr)}
+		return &accountRolesError{action: "delete", err: fmt.Errorf("error: %v, stderr: %s", err, stderr.String())}
 	}
 
 	r.log.Info("Account roles deleted!", prefixLoggerKey, prefix, ocmEnvironmentLoggerKey, r.ocmEnvironment)
@@ -119,7 +119,7 @@ func (r *Provider) getAccountRoles(ctx context.Context, prefix string) (*Account
 
 	stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get account roles: %v", fmt.Sprint(stderr))
+		return nil, fmt.Errorf("failed to get account roles: %v, %s", err, stderr.String())
 	}
 
 	availableAccountRoles, err := cmd.ConvertOutputToListOfMaps(stdout)

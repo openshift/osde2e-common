@@ -35,7 +35,7 @@ func (r *Provider) deleteOperatorRoles(ctx context.Context, clusterID, clusterPr
 
 	_, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return &operatorRoleError{action: "delete", err: fmt.Errorf("error: %v, stderr: %v", err, stderr)}
+		return &operatorRoleError{action: "delete", err: fmt.Errorf("error: %v, stderr: %s", err, stderr.String())}
 	}
 
 	r.log.Info("Cluster operator roles deleted!", clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, r.ocmEnvironment)
