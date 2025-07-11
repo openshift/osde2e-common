@@ -130,7 +130,7 @@ func (r *Provider) regions(ctx context.Context, hostedCP, multiAZ bool) ([]*regi
 
 	stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return nil, &regionError{action: action, err: fmt.Errorf("error: %v, stderr: %v", err, stderr)}
+		return nil, &regionError{action: action, err: fmt.Errorf("error: %v, stderr: %s", err, stderr.String())}
 	}
 
 	availableRegions, err := cmd.ConvertOutputToListOfMaps(stdout)

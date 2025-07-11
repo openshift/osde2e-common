@@ -58,7 +58,7 @@ func (r *Provider) CreateOIDCConfig(ctx context.Context, prefix, installerRoleAr
 
 	stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return "", &oidcConfigError{action: action, err: fmt.Errorf("error: %v, stderr: %v", err, stderr)}
+		return "", &oidcConfigError{action: action, err: fmt.Errorf("error: %v, stderr: %s", err, stderr.String())}
 	}
 
 	output, err := cmd.ConvertOutputToMap(stdout)
@@ -126,7 +126,7 @@ func (r *Provider) deleteOIDCConfigProvider(ctx context.Context, clusterID, oidc
 
 	_, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return &oidcConfigError{action: "delete", err: fmt.Errorf("error: %v, stderr: %v", err, stderr)}
+		return &oidcConfigError{action: "delete", err: fmt.Errorf("error: %v, stderr: %s", err, stderr.String())}
 	}
 
 	r.log.Info("Cluster oidc config provider deleted!", clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, r.ocmEnvironment)

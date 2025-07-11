@@ -56,7 +56,7 @@ func (r *Provider) Versions(ctx context.Context, channelGroup string, hostedCP b
 
 	stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return nil, &versionError{action: action, err: fmt.Errorf("error: %v, stderr: %v", err, stderr)}
+		return nil, &versionError{action: action, err: fmt.Errorf("error: %v, stderr: %s", err, stderr.String())}
 	}
 
 	availableVersions, err := cmd.ConvertOutputToListOfMaps(stdout)

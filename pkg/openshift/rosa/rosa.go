@@ -213,7 +213,7 @@ func getVersion(ctx context.Context, rosaBinary string) (string, error) {
 		return "", err
 	}
 
-	versionSlice := strings.SplitAfter(fmt.Sprint(stdout), "\n")
+	versionSlice := strings.SplitAfter(stdout.String(), "\n")
 	if len(versionSlice) == 0 {
 		return "", errors.New("getVersion failed to get version from cli standard out")
 	}
@@ -252,7 +252,7 @@ func verifyLogin(ctx context.Context, rosaBinary string, token string, clientID 
 
 	_, stderr, err := cmd.Run(command)
 	if err != nil {
-		return fmt.Errorf("login failed with %q: %w", stderr, err)
+		return fmt.Errorf("login failed with %q: %w", stderr.String(), err)
 	}
 
 	return nil

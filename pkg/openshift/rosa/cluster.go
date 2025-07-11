@@ -541,7 +541,7 @@ func (r *Provider) createCluster(ctx context.Context, options *CreateClusterOpti
 
 	_, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return "", fmt.Errorf("error: %v, stderr: %v", err, stderr)
+		return "", fmt.Errorf("error: %v, stderr: %s", err, stderr.String())
 	}
 
 	cluster, err := r.findCluster(ctx, options.ClusterName)
@@ -590,7 +590,7 @@ func (r *Provider) deleteCluster(ctx context.Context, clusterID string) error {
 
 	_, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 	if err != nil {
-		return fmt.Errorf("error: %v, stderr: %v", err, stderr)
+		return fmt.Errorf("error: %v, stderr: %s", err, stderr.String())
 	}
 
 	r.log.Info("Cluster deletion initiated!", clusterIDLoggerKey, clusterID, ocmEnvironmentLoggerKey, r.ocmEnvironment)
@@ -609,7 +609,7 @@ func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, c
 
 		stdout, stderr, err := r.RunCommand(ctx, exec.CommandContext(ctx, r.rosaBinary, commandArgs...))
 		if err != nil {
-			return "", fmt.Errorf("error: %v, stderr: %v", err, stderr)
+			return "", fmt.Errorf("error: %v, stderr: %s", err, stderr.String())
 		}
 
 		output, err := cmd.ConvertOutputToMap(stdout)
