@@ -109,7 +109,7 @@ type createdResources struct {
 func (r *Provider) cleanup(ctx context.Context, resources *createdResources) {
 	if resources.createdVPC {
 		r.log.Info("Cleaning up VPC due to cluster creation failure")
-		if err := r.deleteVPC(ctx, resources.clusterName, resources.region, resources.workingDir); err != nil {
+		if err := r.deleteVPC(ctx, resources.clusterName); err != nil {
 			r.log.Error(err, "Failed to cleanup VPC after cluster creation failure")
 		}
 	}
@@ -209,8 +209,6 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 			vpc, err := r.createVPC(
 				ctx,
 				options.ClusterName,
-				r.awsCredentials.Region,
-				options.WorkingDir,
 				options.HostedCP,
 				options.PrivateLink,
 			)
@@ -308,12 +306,7 @@ func (r *Provider) DeleteCluster(ctx context.Context, options *DeleteClusterOpti
 		}
 
 		if options.DeleteHostedVPC {
-			err = r.deleteVPC(
-				ctx,
-				cluster.Name(),
-				r.awsCredentials.Region,
-				options.WorkingDir,
-			)
+			err = r.deleteVPC(ctx, cluster.Name())
 			if err != nil {
 				return &clusterError{action: action, err: err}
 			}

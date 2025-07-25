@@ -15,6 +15,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/openshift/osde2e-common/internal/cmd"
@@ -42,6 +44,7 @@ type Provider struct {
 	AWSRegion  string
 	rosaBinary string
 	user       *accountInfo
+	awsConfig  aws.Config
 
 	fedRamp bool
 }
@@ -59,8 +62,7 @@ func (r *providerError) Error() string {
 // RunCommand runs the rosa command provided
 func (r *Provider) RunCommand(ctx context.Context, command *exec.Cmd) (bytes.Buffer, bytes.Buffer, error) {
 	command.Env = append(command.Environ(), r.awsCredentials.CredentialsAsList()...)
-	commandWithArgs := fmt.Sprintf("rosa%s", strings.Split(command.String(), "rosa")[1])
-	r.log.Info("Command", rosaCommandLoggerKey, commandWithArgs)
+	r.log.Info("Command", rosaCommandLoggerKey, command.String())
 	return cmd.Run(command)
 }
 
@@ -320,6 +322,10 @@ func New(ctx context.Context, token string, clientID string, clientSecret string
 	}
 
 	provider.AWSRegion = awsCredentials.Region
+	provider.awsConfig, err = provider.createAWSConfig(ctx, provider.AWSRegion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AWS config: %v", err)
+	}
 
 	provider.Client, err = ocmclient.New(ctx, token, clientID, clientSecret, ocmEnvironment)
 	if err != nil {
@@ -327,4 +333,33 @@ func New(ctx context.Context, token string, clientID string, clientSecret string
 	}
 
 	return provider, nil
+}
+
+// createAWSConfig creates AWS SDK configuration
+func (r *Provider) createAWSConfig(ctx context.Context, awsRegion string) (aws.Config, error) {
+	var awsConfig aws.Config
+	var err error
+
+	// Configure AWS SDK based on credential type
+	awsCredentials := r.awsCredentials.CredentialsAsMap()
+
+	if profile, exists := awsCredentials["AWS_PROFILE"]; exists {
+		// Use profile-based configuration
+		awsConfig, err = config.LoadDefaultConfig(ctx,
+			config.WithRegion(awsRegion),
+			config.WithSharedConfigProfile(profile),
+		)
+	} else {
+		// Use access key configuration
+		awsConfig, err = config.LoadDefaultConfig(ctx,
+			config.WithRegion(awsRegion),
+		)
+		// The SDK will automatically use AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from environment
+	}
+
+	if err != nil {
+		return aws.Config{}, fmt.Errorf("failed to load AWS config: %v", err)
+	}
+
+	return awsConfig, nil
 }

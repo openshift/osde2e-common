@@ -12,7 +12,6 @@ const (
 	oidcConfigIDLoggerKey        = "oidc_config_id"
 	prefixLoggerKey              = "prefix"
 	rosaCommandLoggerKey         = "rosa_command"
-	terraformWorkingDirLoggerKey = "terraform_working_dir"
 	timeoutLoggerKey             = "timeout"
 	versionLoggerKey             = "version"
 )
