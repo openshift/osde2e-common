@@ -18,7 +18,7 @@ require (
 	github.com/openshift/api v0.0.0-20240522145529-93d6bda14341
 	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250
 	github.com/openshift/library-go v0.0.0-20240517135010-e93e442c2b18
-	github.com/prometheus/client_golang v1.22.0
+	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/common v0.65.0
 	k8s.io/api v0.31.3
 	k8s.io/apimachinery v0.31.3
@@ -77,7 +77,7 @@ require (
 	github.com/openshift-online/ocm-api-model/model v0.0.426 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
