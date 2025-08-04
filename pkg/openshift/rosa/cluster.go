@@ -225,6 +225,7 @@ func (r *Provider) CreateCluster(ctx context.Context, options *CreateClusterOpti
 
 	clusterID, err := r.createCluster(ctx, options)
 	if err != nil {
+		r.log.Error(err, "unable to create cluster")
 		r.cleanup(ctx, resources)
 		return "", &clusterError{action: action, err: err}
 	}
