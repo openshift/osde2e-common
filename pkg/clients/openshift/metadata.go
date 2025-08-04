@@ -26,7 +26,7 @@ func (c Client) IsSTS(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return cmData["api_openshift_com_sts"] == "true", nil
+	return cmData["api.openshift.com_sts"] == "true", nil
 }
 
 func (c Client) IsCCS(ctx context.Context) (bool, error) {
@@ -34,7 +34,7 @@ func (c Client) IsCCS(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return cmData["api_openshift_com_ccs"] == "true", nil
+	return cmData["api.openshift.com_ccs"] == "true", nil
 }
 
 func (c Client) GetProvider(ctx context.Context) (string, error) {
@@ -42,7 +42,7 @@ func (c Client) GetProvider(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return cmData["hive_openshift_io_cluster-platform"], nil
+	return cmData["hive.openshift.io_cluster-platform"], nil
 }
 
 func (c Client) GetRegion(ctx context.Context) (string, error) {
@@ -50,5 +50,5 @@ func (c Client) GetRegion(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return cmData["hive_openshift_io_cluster-region"], nil
+	return cmData["hive.openshift.io_cluster-region"], nil
 }
