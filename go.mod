@@ -1,8 +1,6 @@
 module github.com/openshift/osde2e-common
 
-go 1.23.0
-
-toolchain go1.23.7
+go 1.24.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
