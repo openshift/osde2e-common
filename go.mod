@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/onsi/gomega v1.38.3
-	github.com/openshift-online/ocm-sdk-go v0.1.486
+	github.com/openshift-online/ocm-sdk-go v0.1.490
 	github.com/openshift/api v0.0.0-20240522145529-93d6bda14341
 	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250
 	github.com/openshift/library-go v0.0.0-20240517135010-e93e442c2b18
@@ -72,8 +72,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/openshift-online/ocm-api-model/clientapi v0.0.440 // indirect
-	github.com/openshift-online/ocm-api-model/model v0.0.440 // indirect
+	github.com/openshift-online/ocm-api-model/clientapi v0.0.444 // indirect
+	github.com/openshift-online/ocm-api-model/model v0.0.444 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
