@@ -11,7 +11,16 @@ import (
 	"github.com/openshift/osde2e-common/pkg/clients/openshift"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	authenticationv1 "k8s.io/api/authentication/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	// Prometheus configuration for OpenShift
+	prometheusNamespace      = "openshift-monitoring"
+	prometheusServiceAccount = "prometheus-k8s"
+	prometheusTokenDuration  = 1 * time.Hour
 )
 
 type Client struct {
@@ -58,4 +67,32 @@ func (c *Client) InstantQuery(ctx context.Context, query string) (model.Vector, 
 	}
 
 	return vector, nil
+}
+
+// GetPrometheusToken retrieves a token for the prometheus-k8s service account using TokenRequest API.
+// This implementation follows the pattern from openshift/library-go/test/library/metrics/query.go.
+// This is the modern, recommended approach for Kubernetes 1.24+.
+func GetPrometheusToken(ctx context.Context, client *openshift.Client) (string, error) {
+	// Get config and create Kubernetes client
+	cfg := client.GetConfig()
+	kubeClient, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return "", fmt.Errorf("failed to create kubernetes client: %w", err)
+	}
+
+	// Create token request - matches library-go pattern
+	expirationSeconds := int64(prometheusTokenDuration / time.Second)
+	req, err := kubeClient.CoreV1().ServiceAccounts(prometheusNamespace).CreateToken(ctx, prometheusServiceAccount,
+		&authenticationv1.TokenRequest{
+			Spec: authenticationv1.TokenRequestSpec{ExpirationSeconds: &expirationSeconds},
+		}, metav1.CreateOptions{})
+	if err != nil {
+		return "", fmt.Errorf("error requesting token for service account %s/%s: %w", prometheusNamespace, prometheusServiceAccount, err)
+	}
+
+	if req.Status.Token == "" {
+		return "", fmt.Errorf("received empty token for service account %s/%s", prometheusNamespace, prometheusServiceAccount)
+	}
+
+	return req.Status.Token, nil
 }
