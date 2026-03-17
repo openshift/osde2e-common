@@ -13,9 +13,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.0
 	github.com/openshift-online/ocm-sdk-go v0.1.497
-	github.com/openshift/api v0.0.0-20240522145529-93d6bda14341
-	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250
-	github.com/openshift/library-go v0.0.0-20240517135010-e93e442c2b18
+	github.com/openshift/api v0.0.0-20260317095243-5c75e62da3e7
+	github.com/openshift/client-go v0.0.0-20260306160707-3935d929fc7d
+	github.com/openshift/library-go v0.0.0-20260311094140-ac826d10cb40
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
 	k8s.io/api v0.35.2
@@ -50,7 +50,6 @@ require (
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/glog v1.2.4 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
@@ -97,7 +96,6 @@ require (
 	sigs.k8s.io/controller-runtime v0.20.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
