@@ -18,9 +18,9 @@ require (
 	github.com/openshift/library-go v0.0.0-20260311094140-ac826d10cb40
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
-	k8s.io/api v0.35.2
-	k8s.io/apimachinery v0.35.2
-	k8s.io/client-go v0.35.2
+	k8s.io/api v0.35.3
+	k8s.io/apimachinery v0.35.3
+	k8s.io/client-go v0.35.3
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	sigs.k8s.io/e2e-framework v0.6.0
 )
