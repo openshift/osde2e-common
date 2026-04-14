@@ -36,6 +36,9 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, reportDir string, timeou
 				return true, nil
 			}
 		}
+		c.log.Info(fmt.Sprintf("job %s/%s not yet complete: active=%d succeeded=%d failed=%d",
+			osdClusterReadyNamespace, osdClusterReadyName,
+			job.Status.Active, job.Status.Succeeded, job.Status.Failed))
 		return false, nil
 	}, wait.WithTimeout(timeout)); err != nil {
 		c.log.Error(err, "failed waiting for healthcheck job to finish")
@@ -43,6 +46,8 @@ func (c *Client) OSDClusterHealthy(ctx context.Context, reportDir string, timeou
 		if err != nil {
 			return fmt.Errorf("unable to get job logs for %s/%s: %w", osdClusterReadyNamespace, osdClusterReadyName, err)
 		}
+		c.log.Info(fmt.Sprintf("=== %s/%s job logs ===\n%s\n=== end job logs ===",
+			osdClusterReadyNamespace, osdClusterReadyName, logs))
 		jobLogsFile := fmt.Sprintf("%s/%s.log", reportDir, osdClusterReadyName)
 		if err = os.WriteFile(jobLogsFile, []byte(logs), os.FileMode(0o644)); err != nil {
 			return fmt.Errorf("failed to write job %s logs to file: %w", osdClusterReadyName, err)
