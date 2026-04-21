@@ -18,9 +18,9 @@ import (
 
 const (
 	// Prometheus configuration for OpenShift
-	prometheusNamespace      = "openshift-monitoring"
-	prometheusServiceAccount = "prometheus-k8s"
-	prometheusTokenDuration  = 1 * time.Hour
+	prometheusNamespace            = "openshift-monitoring"
+	prometheusServiceAccount       = "prometheus-k8s"
+	DefaultPrometheusTokenDuration = 1 * time.Hour
 )
 
 type Client struct {
@@ -70,18 +70,30 @@ func (c *Client) InstantQuery(ctx context.Context, query string) (model.Vector, 
 }
 
 // GetPrometheusToken retrieves a token for the prometheus-k8s service account using TokenRequest API.
-// This implementation follows the pattern from openshift/library-go/test/library/metrics/query.go.
-// This is the modern, recommended approach for Kubernetes 1.24+.
+// It uses [DefaultPrometheusTokenDuration] for the token lifetime. For a custom lifetime, use [GetPrometheusTokenWithDuration].
+//
+// This follows openshift/library-go/test/library/metrics/query.go and is the recommended approach for Kubernetes 1.24+.
 func GetPrometheusToken(ctx context.Context, client *openshift.Client) (string, error) {
-	// Get config and create Kubernetes client
+	return GetPrometheusTokenWithDuration(ctx, client, DefaultPrometheusTokenDuration)
+}
+
+// GetPrometheusTokenWithDuration retrieves a token for the prometheus-k8s service account using TokenRequest API,
+// with the requested token lifetime. duration must be at least one second.
+func GetPrometheusTokenWithDuration(ctx context.Context, client *openshift.Client, duration time.Duration) (string, error) {
+	if duration <= 0 {
+		return "", fmt.Errorf("token duration must be positive, got %v", duration)
+	}
+	expirationSeconds := int64(duration / time.Second)
+	if expirationSeconds < 1 {
+		return "", fmt.Errorf("token duration must be at least 1s, got %v", duration)
+	}
+
 	cfg := client.GetConfig()
 	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return "", fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 
-	// Create token request - matches library-go pattern
-	expirationSeconds := int64(prometheusTokenDuration / time.Second)
 	req, err := kubeClient.CoreV1().ServiceAccounts(prometheusNamespace).CreateToken(ctx, prometheusServiceAccount,
 		&authenticationv1.TokenRequest{
 			Spec: authenticationv1.TokenRequestSpec{ExpirationSeconds: &expirationSeconds},
