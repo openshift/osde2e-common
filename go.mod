@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
-	github.com/openshift-online/ocm-sdk-go v0.1.498
+	github.com/openshift-online/ocm-sdk-go v0.1.499
 	github.com/openshift/api v0.0.0-20260317095243-5c75e62da3e7
 	github.com/openshift/client-go v0.0.0-20260306160707-3935d929fc7d
 	github.com/openshift/library-go v0.0.0-20260311094140-ac826d10cb40
