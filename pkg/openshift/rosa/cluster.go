@@ -611,6 +611,7 @@ func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, c
 			return "", fmt.Errorf("failed to convert output to map: %v", err)
 		}
 
+		// TODO: Safely extract cluster state with type checking
 		clusterState := fmt.Sprint(output["status"].(map[string]any)["state"])
 
 		return clusterState, err
@@ -622,6 +623,11 @@ func (r *Provider) waitForClusterToBeInstalled(ctx context.Context, clusterID, c
 		clusterState, err := getClusterState()
 		if err != nil {
 			return false, err
+		}
+
+		// Fail fast on terminal error states
+		if clusterState == "error" || clusterState == "failed" || clusterState == "uninstalling" {
+			return false, fmt.Errorf("cluster entered terminal state: %s", clusterState)
 		}
 
 		if clusterState != "ready" {
