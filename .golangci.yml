@@ -1,0 +1,17 @@
+version: 2
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
+
+run:
+  timeout: 3m
+  skip-dirs:
+    - vendor
+
+issues:
+  exclude-dirs:
+    - vendor
