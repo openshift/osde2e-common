@@ -6,58 +6,82 @@ import (
 	"os"
 	"time"
 
-	batchv1 "k8s.io/api/batch/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 )
 
 const (
-	osdClusterReadyName      = "osd-cluster-ready"
-	osdClusterReadyNamespace = "openshift-monitoring"
-	jobNameLoggerKey         = "job_name"
-	timeoutLoggerKey         = "timeout"
+	timeoutLoggerKey = "timeout"
 )
 
 // OSDClusterHealthy waits for the cluster to be in a healthy "ready" state
-// by confirming the osd-ready-job finishes successfully
+// by confirming every ClusterOperator is Available, not Degraded, and not
+// Progressing.
+//
+// This previously waited on the osd-cluster-ready Job, but that Job was
+// removed cluster-side (see openshift/managed-cluster-config#ROSAENG-1342):
+// it duplicated the ClusterOperator Progressing=false signal checked here,
+// and nothing in OCM/OSDFM consumed its completion signal. Waiting on a Job
+// that no longer exists caused this check to time out on every cluster, and
+// the subsequent GetJobLogs call to panic when no pods were ever created for
+// it.
 func (c *Client) OSDClusterHealthy(ctx context.Context, reportDir string, timeout time.Duration) error {
-	if err := wait.For(func(ctx context.Context) (bool, error) {
-		job := new(batchv1.Job)
-		if err := c.Get(ctx, osdClusterReadyName, osdClusterReadyNamespace, job); err != nil {
-			c.log.Error(err, fmt.Sprintf("failed to get job %s/%s", osdClusterReadyNamespace, osdClusterReadyName))
-			if IsRetryableAPIError(err) || apierrors.IsNotFound(err) {
+	c.log.Info("Waiting for cluster operators to report healthy", timeoutLoggerKey, timeout.Round(time.Second).String())
+
+	var unhealthy []string
+	err := wait.For(func(ctx context.Context) (bool, error) {
+		operators := new(configv1.ClusterOperatorList)
+		if err := c.List(ctx, operators); err != nil {
+			if IsRetryableAPIError(err) {
+				c.log.Error(err, "failed to list cluster operators, retrying")
 				return false, nil
 			}
 			return false, err
 		}
-		for _, cond := range job.Status.Conditions {
-			if cond.Type == batchv1.JobComplete && cond.Status == corev1.ConditionTrue {
-				return true, nil
+
+		if len(operators.Items) == 0 {
+			return false, nil
+		}
+
+		unhealthy = unhealthy[:0]
+		for _, operator := range operators.Items {
+			if !clusterOperatorHealthy(operator) {
+				unhealthy = append(unhealthy, operator.Name)
 			}
 		}
-		c.log.Info(fmt.Sprintf("job %s/%s not yet complete: active=%d succeeded=%d failed=%d",
-			osdClusterReadyNamespace, osdClusterReadyName,
-			job.Status.Active, job.Status.Succeeded, job.Status.Failed))
-		return false, nil
-	}, wait.WithTimeout(timeout)); err != nil {
-		c.log.Error(err, "failed waiting for healthcheck job to finish")
-		logs, err := c.GetJobLogs(ctx, osdClusterReadyName, osdClusterReadyNamespace)
-		if err != nil {
-			return fmt.Errorf("unable to get job logs for %s/%s: %w", osdClusterReadyNamespace, osdClusterReadyName, err)
+
+		if len(unhealthy) > 0 {
+			c.log.Info(fmt.Sprintf("waiting for %d cluster operator(s) to become healthy", len(unhealthy)), "unhealthy_operators", unhealthy)
+			return false, nil
 		}
-		c.log.Info(fmt.Sprintf("=== %s/%s job logs ===\n%s\n=== end job logs ===",
-			osdClusterReadyNamespace, osdClusterReadyName, logs))
-		jobLogsFile := fmt.Sprintf("%s/%s.log", reportDir, osdClusterReadyName)
-		if err = os.WriteFile(jobLogsFile, []byte(logs), os.FileMode(0o644)); err != nil {
-			return fmt.Errorf("failed to write job %s logs to file: %w", osdClusterReadyName, err)
-		}
-		return fmt.Errorf("%s/%s failed to complete (check %s for more info): %w", osdClusterReadyNamespace, osdClusterReadyName, jobLogsFile, err)
+
+		return true, nil
+	}, wait.WithTimeout(timeout))
+	if err != nil {
+		return fmt.Errorf("cluster operators failed to report healthy within %s (last unhealthy: %v): %w", timeout, unhealthy, err)
 	}
 
-	c.log.Info("Cluster job finished successfully!", jobNameLoggerKey, osdClusterReadyName)
+	c.log.Info("Cluster operators reported healthy!")
 
 	return nil
+}
+
+// clusterOperatorHealthy returns true if the operator is Available, not
+// Degraded, and not Progressing.
+func clusterOperatorHealthy(operator configv1.ClusterOperator) bool {
+	var available, degraded, progressing bool
+	for _, condition := range operator.Status.Conditions {
+		switch condition.Type {
+		case configv1.OperatorAvailable:
+			available = condition.Status == configv1.ConditionTrue
+		case configv1.OperatorDegraded:
+			degraded = condition.Status == configv1.ConditionTrue
+		case configv1.OperatorProgressing:
+			progressing = condition.Status == configv1.ConditionTrue
+		}
+	}
+	return available && !degraded && !progressing
 }
 
 // HCPClusterHealthy waits for the cluster to be in a health "ready" state

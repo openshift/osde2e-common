@@ -91,6 +91,9 @@ func (c *Client) GetJobLogs(ctx context.Context, name, namespace string) (string
 	if err != nil {
 		return "", fmt.Errorf("failed to list pods for job %s in %s namespace: %w", name, namespace, err)
 	}
+	if len(pods.Items) == 0 {
+		return "", fmt.Errorf("no pods found for job %s in %s namespace", name, namespace)
+	}
 	// TODO: there may be a case where the first item isn't correct
 	return c.GetPodLogs(ctx, pods.Items[0].GetName(), namespace)
 }
