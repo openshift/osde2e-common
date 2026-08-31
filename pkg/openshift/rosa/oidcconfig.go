@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"sort"
 	"strings"
 
 	"github.com/openshift/osde2e-common/internal/cmd"
@@ -32,12 +33,13 @@ func (r *Provider) CreateOIDCConfig(ctx context.Context, prefix, installerRoleAr
 	}
 
 	oidcConfig, err := r.oidcConfigLookup(ctx, prefix)
+	if err != nil {
+		return "", &oidcConfigError{action: action, err: err}
+	}
 	if oidcConfig != nil {
 		r.log.Info("OIDC config id already exist", prefixLoggerKey, prefix, oidcConfigIDLoggerKey, oidcConfig.ID(),
 			ocmEnvironmentLoggerKey, r.ocmEnvironment)
 		return oidcConfig.ID(), nil
-	} else if err != nil {
-		return "", &oidcConfigError{action: action, err: err}
 	}
 
 	commandArgs := []string{
@@ -94,18 +96,48 @@ func (r *Provider) DeleteOIDCConfig(ctx context.Context, oidcConfigID string) er
 
 // oidcConfigLookup checks if an oidc config already exists using the provided prefix
 func (r *Provider) oidcConfigLookup(ctx context.Context, prefix string) (*clustersmgmtv1.OidcConfig, error) {
-	response, err := r.ClustersMgmt().V1().OidcConfigs().List().SendContext(ctx)
+	configs, err := r.ListOIDCConfigs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve oidc configs from ocm: %v", err)
 	}
 
-	for _, oidcConfig := range response.Items().Slice() {
-		if strings.Contains(oidcConfig.SecretArn(), prefix) {
-			return oidcConfig, nil
+	return selectOIDCConfigByPrefix(configs, prefix), nil
+}
+
+const rosaOIDCSecretNamePrefix = "rosa-private-key-oidc-"
+
+// selectOIDCConfigByPrefix returns the matching OIDC config with the lowest ID.
+func selectOIDCConfigByPrefix(configs map[string]*clustersmgmtv1.OidcConfig, prefix string) *clustersmgmtv1.OidcConfig {
+	ids := make([]string, 0, len(configs))
+	for id, oidcConfig := range configs {
+		if oidcConfig != nil && oidcSecretARNHasPrefix(oidcConfig.SecretArn(), prefix) {
+			ids = append(ids, id)
 		}
 	}
+	if len(ids) == 0 {
+		return nil
+	}
+	sort.Strings(ids)
+	return configs[ids[0]]
+}
 
-	return nil, nil
+// oidcSecretARNHasPrefix reports whether the secret name after rosa-private-key-oidc-
+// is prefix or prefix followed by a hyphen-delimited suffix (for example the AWS
+// 6-character suffix). Prefix "abc" therefore does not match "abcd".
+func oidcSecretARNHasPrefix(arn, prefix string) bool {
+	if arn == "" || prefix == "" {
+		return false
+	}
+	name := arn
+	const marker = ":secret:"
+	if i := strings.LastIndex(arn, marker); i >= 0 {
+		name = arn[i+len(marker):]
+	}
+	if !strings.HasPrefix(name, rosaOIDCSecretNamePrefix) {
+		return false
+	}
+	rest := name[len(rosaOIDCSecretNamePrefix):]
+	return rest == prefix || strings.HasPrefix(rest, prefix+"-")
 }
 
 // deleteOIDCConfigProvider deletes the oidc config provider associated to the cluster
