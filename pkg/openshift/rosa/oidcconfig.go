@@ -98,7 +98,7 @@ func (r *Provider) DeleteOIDCConfig(ctx context.Context, oidcConfigID string) er
 func (r *Provider) oidcConfigLookup(ctx context.Context, prefix string) (*clustersmgmtv1.OidcConfig, error) {
 	configs, err := r.ListOIDCConfigs(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve oidc configs from ocm: %v", err)
+		return nil, fmt.Errorf("failed to retrieve oidc configs from ocm: %w", err)
 	}
 
 	return selectOIDCConfigByPrefix(configs, prefix), nil
